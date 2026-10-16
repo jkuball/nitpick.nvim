@@ -1,4 +1,9 @@
-# nitpick.nvim
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/wordmark-dark.svg">
+    <img alt="nitpick.nvim" src="assets/wordmark-light.svg" width="460">
+  </picture>
+</h1>
 
 Nitpick your coding agent's work from Neovim. Leave review comments – nits –
 on lines and ranges while you read code, then send them to a running

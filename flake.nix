@@ -45,13 +45,13 @@
         # Claude Code plugin (a mod); load it with --plugin-dir or CLAUDE_CODE_PLUGIN_DIRS.
         claudePlugin = pkgs.runCommand "nitpick-claude-plugin-${version}" { } ''
           mkdir -p $out/.claude-plugin $out/hooks $out/bin
-          cp ${./claude/.claude-plugin/plugin.json} $out/.claude-plugin/plugin.json
-          cp ${./claude/hooks/hooks.json} $out/hooks/hooks.json
-          cp ${./claude/hooks/register.js} $out/hooks/register.js
-          cp ${./pi/bridge.ts} $out/bridge.ts
-          substitute ${./claude/bridge-helper.ts} $out/bridge-helper.ts \
+          cp ${./integrations/claude/.claude-plugin/plugin.json} $out/.claude-plugin/plugin.json
+          cp ${./integrations/claude/hooks/hooks.json} $out/hooks/hooks.json
+          cp ${./integrations/claude/hooks/register.js} $out/hooks/register.js
+          cp ${./integrations/pi/bridge.ts} $out/bridge.ts
+          substitute ${./integrations/claude/bridge-helper.ts} $out/bridge-helper.ts \
             --replace-fail '"../pi/bridge.ts"' '"./bridge.ts"'
-          substitute ${./claude/bin/nitpick-bridge} $out/bin/nitpick-bridge \
+          substitute ${./integrations/claude/bin/nitpick-bridge} $out/bin/nitpick-bridge \
             --replace-fail 'exec node ' 'exec ${pkgs.nodejs_24}/bin/node '
           chmod +x $out/bin/nitpick-bridge
         '';
@@ -59,8 +59,8 @@
         # Pi extension; load "${piExtension}/index.ts".
         piExtension = pkgs.runCommand "nitpick-pi-extension-${version}" { } ''
           mkdir -p $out
-          cp ${./pi/index.ts} $out/index.ts
-          cp ${./pi/bridge.ts} $out/bridge.ts
+          cp ${./integrations/pi/index.ts} $out/index.ts
+          cp ${./integrations/pi/bridge.ts} $out/bridge.ts
         '';
       };
     in
@@ -112,8 +112,7 @@
               ./lua
               ./plugin
               ./doc
-              ./pi
-              ./claude
+              ./integrations
               ./tests
             ];
           };
@@ -129,7 +128,7 @@
 
           bridge = pkgs.runCommand "nitpick-bridge-tests" { nativeBuildInputs = [ pkgs.nodejs_24 ]; } ''
             cd ${src}
-            node --test pi/bridge.test.ts pi/index.test.ts claude/bridge-helper.spec.ts
+            node --test integrations/pi/bridge.test.ts integrations/pi/index.test.ts integrations/claude/bridge-helper.spec.ts
             touch $out
           '';
 

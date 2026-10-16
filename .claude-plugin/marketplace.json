@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "nitpick",
-      "source": "./claude",
+      "source": "./integrations/claude",
       "description": "Receive code reviews written in Neovim (nitpick.nvim) as prompts"
     }
   ]

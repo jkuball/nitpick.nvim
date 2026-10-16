@@ -210,9 +210,9 @@ exactly what the agent receives. In Pi, `/nvim [on|off]` shows or toggles the
 bridge; `NITPICK_AUTOSTART=0` disables the automatic start.
 
 Claude Code (2.1.287 or newer) works the same way through the mod in the
-repository's `claude/` directory: it starts the same bridge in a Node
-process for each session. |:NitTo| lists such sessions as "claude <tag>", and
-Claude Code shows the tag among the mode labels right of its prompt.
+repository's `integrations/claude/` directory: it starts the same bridge in a
+Node process for each session. |:NitTo| lists such sessions as "claude <tag>",
+and Claude Code shows the tag among the mode labels right of its prompt.
 
 The protocol, version 1, has two requests. Neovim connects, writes one JSON
 line, reads one JSON line back, and the connection closes: >json

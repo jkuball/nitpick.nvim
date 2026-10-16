@@ -5,7 +5,7 @@
   "license": "MIT",
   "pi": {
     "extensions": [
-      "./pi/index.ts"
+      "./integrations/pi/index.ts"
     ]
   }
 }

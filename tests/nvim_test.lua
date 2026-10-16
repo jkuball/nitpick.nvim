@@ -62,7 +62,7 @@ local function keys(k)
   vim.api.nvim_feedkeys(vim.keycode(k), "mx", false)
 end
 
--- A fake Pi bridge speaking the same protocol as pi/bridge.ts.
+-- A fake Pi bridge speaking the same protocol as integrations/pi/bridge.ts.
 local received = {}
 local function fake_pi(opts)
   opts = opts or {}

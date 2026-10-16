@@ -1,5 +1,5 @@
 -- Discovery of and requests to running agent sessions, Pi or Claude Code
--- (see pi/bridge.ts).
+-- (see integrations/pi/bridge.ts).
 
 local config = require("nitpick.config")
 

@@ -1,0 +1,233 @@
+*nitpick.txt*  Code reviews from Neovim to a running Pi or Claude Code session
+
+==============================================================================
+CONTENTS                                                  *nitpick*
+
+  1. Introduction ............................ |nitpick-intro|
+  2. Commands ................................ |nitpick-commands|
+  3. Mappings ................................ |nitpick-mappings|
+  4. Configuration ........................... |nitpick-config|
+  5. How it talks to the agent ............... |nitpick-bridge|
+
+==============================================================================
+1. INTRODUCTION                                           *nitpick-intro*
+
+Collect review comments – nits – on lines and ranges while you read code,
+then send them to your coding agent, Pi or Claude Code, as one message.
+Comments are anchored with extmarks, shown in the sign column and as
+virtual text. Each Neovim has one review, kept in memory for as long as it
+runs.
+
+The agent needs nitpick's part for it: the Pi extension or the Claude Code
+mod (see |nitpick-bridge|). Either listens in every interactive session.
+
+The project root is found from |:pwd| (see `root_markers`). It decides how
+paths appear in the review (relative to it) and which agent session |:NitTo|
+picks. Files outside of it can be annotated too; you get a warning, and the
+review names them by their absolute path.
+
+==============================================================================
+2. COMMANDS                                               *nitpick-commands*
+
+:[range]Nit[!] [text]                              *:Nit*
+    Comment on [range] (default: the current line). With [text], store it
+    directly: >vim
+        :Nit Explain this condition
+        :'<,'>Nit This whole block looks redundant
+        :12,18Nit Why do we need this?
+<
+    Without [text], open a comment buffer. It is an ordinary buffer: |:w|
+    saves the comment, |:wq| saves and closes, |:q!| discards. Writing an
+    empty buffer deletes the comment. Without a range, an existing comment
+    on the cursor line is edited; with a range, the comment on exactly that
+    range. [!] always starts a new comment. In a nitpick quickfix or
+    location list window, :Nit edits the comment of the entry under the
+    cursor – any comment, notes included. Command modifiers choose the
+    window: >vim
+        :vertical Nit
+        :tab Nit
+<
+:NitNote[!] [text]                                          *:NitNote*
+    A note on the review as a whole, not on any line, such as "let's rethink
+    the naming overall". Notes come first in the review, under "General".
+    Without [text], open the existing note in a comment buffer as |:Nit|
+    does – with several, pick one – or start a new one. [!] always starts a
+    new one.
+
+:NitFile[!] [text]                                          *:NitFile*
+    A note on the current file as a whole, not on any line. It shows as
+    virtual text at the end of the file's first line, and in the review
+    under the file's heading, before its lines. Without [text] and with
+    [!], as for |:NitNote|.
+
+:[range]NitDelete                                          *:NitDelete*
+    Delete the comments that touch [range]. In a nitpick quickfix or
+    location list window it deletes the entries in [range] instead.
+
+:[range]NitKind [kind]                                     *:NitKind*
+    Classify the comments that touch [range] (in a nitpick list window: the
+    entries in [range]). Without [kind], pick one with |vim.ui.select()|.
+    "none" makes a comment unclassified again. Comments start unclassified;
+    the kinds come from the `kinds` option (|nitpick-kinds|).
+
+:Nits                                                      *:Nits*
+    Put all pending comments into the |quickfix| list and open it. The list
+    is kept up to date while it exists, so |]q|, |:cdo| and friends work.
+
+:LNits                                                     *:LNits*
+    Put the current file's pending comments into the window's
+    |location-list| and open it. Kept up to date like |:Nits|.
+
+:NitReview [text]                                          *:NitReview*
+    Open the complete review message in a Markdown buffer. It works like the
+    message buffer of `git commit`: edit it freely, |:w| saves, and closing
+    the buffer (|:wq|, |:x|, |ZZ|) sends what you saved last. |:q!| before
+    saving cancels; to cancel after saving, empty the buffer and |:wq|. If
+    sending fails, the buffer opens again with your text. [text] works as
+    for |:NitSend|.
+
+:NitSend [text]                                            *:NitSend*
+    Send all pending comments. [text] is put in front of the review. The
+    agent takes it the most immediate way it has: idle, it starts a turn;
+    busy, Pi steers the running turn with it, while Claude Code follows up
+    once the turn ends. Comments are only removed once the agent accepted
+    them.
+
+:NitClear[!]                                               *:NitClear*
+    Delete all pending comments after confirmation ([!] skips it).
+
+:NitTo[!]                                                    *:NitTo*
+    Attach to the agent session reviews go to. If exactly one session runs in
+    this project, attach to it directly; otherwise (or with [!]) list all
+    running sessions with |vim.ui.select()|, those of this project first.
+    Each entry shows the agent and the session's tag, which the agent also
+    shows ("ŋ nvim a3f9c1" in Pi's footer and among Claude Code's mode
+    labels), its title and its directory. Before you attach,
+    |:NitSend| does the same as |:NitTo|.
+
+==============================================================================
+3. MAPPINGS                                               *nitpick-mappings*
+
+nitpick maps no keys. It provides <Plug> targets; this is a suggested set,
+with "gb" ("go bother") as the operator: >lua
+    local map = vim.keymap.set
+    map({ "n", "x" }, "gb", "<Plug>(nitpick-annotate)")
+    map({ "n", "x", "o" }, "]n", "<Plug>(nitpick-next)")
+    map({ "n", "x", "o" }, "[n", "<Plug>(nitpick-prev)")
+    map("n", "<leader>nn", "<Plug>(nitpick-annotate-line)")
+    map("x", "<leader>nn", "<Plug>(nitpick-annotate)")
+    map("n", "<leader>no", "<Plug>(nitpick-note)")
+    map("n", "<leader>nf", "<Plug>(nitpick-file)")
+    map({ "n", "x" }, "<leader>nk", "<Plug>(nitpick-kind)")
+    map({ "n", "x" }, "<leader>nd", "<Plug>(nitpick-delete)")
+    map("n", "<leader>nq", "<Plug>(nitpick-qflist)")
+    map("n", "<leader>nl", "<Plug>(nitpick-loclist)")
+    map("n", "<leader>nr", "<Plug>(nitpick-review)")
+    map("n", "<leader>ns", "<Plug>(nitpick-send)")
+    map("n", "<leader>nc", "<Plug>(nitpick-clear)")
+    map("n", "<leader>nt", "<Plug>(nitpick-to)")
+<
+  <Plug>(nitpick-annotate)       Operator: annotate {motion}, or the selection
+  <Plug>(nitpick-annotate-line)  Annotate [count] lines
+  <Plug>(nitpick-note)           |:NitNote|
+  <Plug>(nitpick-file)           |:NitFile|
+  <Plug>(nitpick-kind)           |:NitKind| on the line or selection
+  <Plug>(nitpick-delete)         |:NitDelete| on the line or selection
+  <Plug>(nitpick-qflist)         |:Nits|
+  <Plug>(nitpick-loclist)        |:LNits|
+  <Plug>(nitpick-review)         |:NitReview|
+  <Plug>(nitpick-send)           |:NitSend|
+  <Plug>(nitpick-clear)          |:NitClear|
+  <Plug>(nitpick-to)             |:NitTo|
+  <Plug>(nitpick-next)           Next nit in the buffer
+  <Plug>(nitpick-prev)           Previous nit in the buffer
+
+"gbb" annotates the current line, like "gcc": the second "b" is the
+`line_key` option. If you put the operator elsewhere, set `line_key` to its
+last key. Don't end the operator's keys in "a" or "i", which start text
+objects ("ap", "iw").
+
+Linewise motions and Visual-line mode comment on whole lines. Charwise ones
+("gbiw", "v" selections) also remember the exact columns: the text is
+highlighted with `NitpickRange`, and the review names the columns ("line 9,
+columns 5-9") while still quoting whole lines.
+
+Next/previous take a [count], wrap around, set the ' mark and work in Visual
+and Operator-pending mode. Across files, use |:Nits| and |]q|.
+
+Note: vim-unimpaired uses "]n" and "[n" for conflict markers.
+
+==============================================================================
+4. CONFIGURATION                                          *nitpick-config*
+
+No setup is needed. Options come from `vim.g.nitpick` or from: >lua
+    require("nitpick").setup({
+      line_key = "b",              -- gb + b: current line
+      open_cmd = "botright 10split",
+      startinsert = true,
+      signs = { enabled = true, single = "▶", first = "┌", middle = "│", last = "└" },
+      icon = "ŋ",                  -- statusline and window titles
+      virt_text = { enabled = true, prefix = "ŋ ", max_width = 60 },
+      instructions = "…",          -- opening text of every review
+      kinds = { … },               -- see |nitpick-kinds|
+      unclassified_heading = "Comments",
+      max_excerpt_lines = 200,
+      root_markers = { ".git", ".jj", ".hg" },
+      socket_dir = nil,            -- see |nitpick-bridge|
+      timeout = 2000,
+    })
+<
+
+A project replaces the opening instructions with `.pi/review-prompt.md` in
+its root; an empty file omits them.
+
+                                                          *nitpick-kinds*
+Comment kinds replace rules in the prompt: as long as all comments are
+unclassified, the review lists them by file and line. Once some are typed, it is
+split into one section per type, in the order of `kinds`, unclassified comments
+last. Setting `kinds` replaces the whole list. The defaults: >lua
+    kinds = {
+      { name = "change",   sign = "!", hl = "DiagnosticSignWarn", heading = "Please change" },
+      { name = "question", sign = "?", hl = "DiagnosticSignHint", heading = "Questions" },
+      { name = "note",     sign = "i", hl = "DiagnosticSignInfo", heading = "Notes" },
+    },
+<
+
+Highlights: `NitpickSign`, `NitpickVirtText`, `NitpickTitle`, `NitpickRange`.
+
+Statusline: `require("nitpick").status()` returns e.g. "ŋ 3 → a3f9c1"
+(pending comments, attached session), or "" when there is neither. For
+lualine: `sections = { lualine_x = { require("nitpick").status, … } }`.
+
+==============================================================================
+5. HOW IT TALKS TO THE AGENT                              *nitpick-bridge*
+
+Each agent session listens on a Unix socket `<pid>.sock` in
+`$NITPICK_DIR`, else `$XDG_RUNTIME_DIR/nitpick`, else
+`$TMPDIR/nitpick-<uid>`. The directory is private (0700). Requests are
+newline-delimited JSON. Neovim formats the review, so |:NitReview| shows
+exactly what the agent receives. In Pi, `/nvim [on|off]` shows or toggles the
+bridge; `NITPICK_AUTOSTART=0` disables the automatic start.
+
+Claude Code (2.1.287 or newer) works the same way through the mod in the
+repository's `claude/` directory: it starts the same bridge in a Node
+process for each session. |:NitTo| lists such sessions as "claude <tag>", and
+Claude Code shows the tag among the mode labels right of its prompt.
+
+The protocol, version 1, has two requests. Neovim connects, writes one JSON
+line, reads one JSON line back, and the connection closes: >json
+    → {"v":1,"type":"hello"}
+    ← {"ok":true,"v":1,"type":"hello","pid":4242,"session":{"agent":"pi",
+       "id":"…","short":"1bca14","name":"…","cwd":"/work","idle":true}}
+
+    → {"v":1,"type":"submit","text":"<the review>","comments":3}
+    ← {"ok":true,"v":1,"type":"submit"}
+
+    ← {"ok":false,"v":1,"error":"…"}
+<
+Neovim formats the whole review; an agent only delivers `text`. `comments`
+is for the agent's own notification.
+
+Run |:checkhealth| nitpick to see the sessions Neovim can reach.
+
+ vim:tw=78:ts=8:ft=help:norl:

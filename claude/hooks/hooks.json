@@ -1,0 +1,4 @@
+{
+  "description": "nitpick: the Neovim review bridge",
+  "modules": ["./register.js"]
+}

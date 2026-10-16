@@ -1,0 +1,16 @@
+{
+  "name": "nitpick",
+  "owner": {
+    "name": "Jonas Kuball"
+  },
+  "metadata": {
+    "description": "nitpick.nvim: code reviews from Neovim for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "nitpick",
+      "source": "./claude",
+      "description": "Receive code reviews written in Neovim (nitpick.nvim) as prompts"
+    }
+  ]
+}

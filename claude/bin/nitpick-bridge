@@ -1,0 +1,3 @@
+#!/bin/sh
+# Started by the nitpick mod; Nix replaces `node` with a store path.
+exec node "$(dirname "$0")/../bridge-helper.ts" "$@"

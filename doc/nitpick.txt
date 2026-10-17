@@ -16,7 +16,7 @@ Collect review comments – nits – on lines and ranges while you read code,
 then send them to your coding agent as one message.
 Comments are anchored with extmarks, shown in the sign column and as
 virtual text. Each Neovim has one review, kept in memory for as long as it
-runs.
+runs. Quitting Neovim drops it, without asking.
 
 Your agent needs nitpick's integration for it (see |nitpick-bridge|); it
 listens in every interactive session.
@@ -34,8 +34,10 @@ review names them by their absolute path.
     directly: >vim
         :Nit Explain this condition
         :'<,'>Nit This whole block looks redundant
-        :12,18Nit Why do we need this?
+        :12,18Nit question: why do we need this?
 <
+    A comment may start with a label (|nitpick-labels|); the first word of
+    [text] completes to one.
     Without [text], open a comment buffer. It is an ordinary buffer: |:w|
     saves the comment, |:wq| saves and closes, |:q!| discards. Writing an
     empty buffer deletes the comment. Without a range, an existing comment
@@ -63,12 +65,6 @@ review names them by their absolute path.
 :[range]NitDelete                                          *:NitDelete*
     Delete the comments that touch [range]. In a nitpick quickfix or
     location list window it deletes the entries in [range] instead.
-
-:[range]NitKind [kind]                                     *:NitKind*
-    Classify the comments that touch [range] (in a nitpick list window: the
-    entries in [range]). Without [kind], pick one with |vim.ui.select()|.
-    "none" makes a comment unclassified again. Comments start unclassified;
-    the kinds come from the `kinds` option (|nitpick-kinds|).
 
 :Nits                                                      *:Nits*
     Put all pending comments into the |quickfix| list and open it. The list
@@ -116,7 +112,6 @@ with "gb" ("go bother") as the operator: >lua
     map("x", "<leader>nn", "<Plug>(nitpick-annotate)")
     map("n", "<leader>no", "<Plug>(nitpick-note)")
     map("n", "<leader>nf", "<Plug>(nitpick-file)")
-    map({ "n", "x" }, "<leader>nk", "<Plug>(nitpick-kind)")
     map({ "n", "x" }, "<leader>nd", "<Plug>(nitpick-delete)")
     map("n", "<leader>nq", "<Plug>(nitpick-qflist)")
     map("n", "<leader>nl", "<Plug>(nitpick-loclist)")
@@ -129,7 +124,6 @@ with "gb" ("go bother") as the operator: >lua
   <Plug>(nitpick-annotate-line)  Annotate [count] lines
   <Plug>(nitpick-note)           |:NitNote|
   <Plug>(nitpick-file)           |:NitFile|
-  <Plug>(nitpick-kind)           |:NitKind| on the line or selection
   <Plug>(nitpick-delete)         |:NitDelete| on the line or selection
   <Plug>(nitpick-qflist)         |:Nits|
   <Plug>(nitpick-loclist)        |:LNits|
@@ -163,12 +157,11 @@ No setup is needed. Options come from `vim.g.nitpick` or from: >lua
       line_key = "b",              -- gb + b: current line
       open_cmd = "botright 10split",
       startinsert = true,
-      signs = { enabled = true, single = "▶", first = "┌", middle = "│", last = "└" },
+      signs = { enabled = true, single = "ŋ", first = "┌", middle = "│", last = "└" },
       icon = "ŋ",                  -- statusline and window titles
       virt_text = { enabled = true, prefix = "ŋ ", max_width = 60 },
       instructions = "…",          -- opening text of every review
-      kinds = { … },               -- see |nitpick-kinds|
-      unclassified_heading = "Comments",
+      labels = { … },              -- see |nitpick-labels|
       max_excerpt_lines = 200,
       root_markers = { ".git", ".jj", ".hg" },
       socket_dir = nil,            -- see |nitpick-bridge|
@@ -179,19 +172,32 @@ No setup is needed. Options come from `vim.g.nitpick` or from: >lua
 A project replaces the opening instructions with `.pi/review-prompt.md` in
 its root; an empty file omits them.
 
-                                                          *nitpick-kinds*
-Comment kinds replace rules in the prompt: as long as all comments are
-unclassified, the review lists them by file and line. Once some are typed, it is
-split into one section per type, in the order of `kinds`, unclassified comments
-last. Setting `kinds` replaces the whole list. The defaults: >lua
-    kinds = {
-      { name = "change",   sign = "!", hl = "DiagnosticSignWarn", heading = "Please change" },
-      { name = "question", sign = "?", hl = "DiagnosticSignHint", heading = "Questions" },
-      { name = "note",     sign = "i", hl = "DiagnosticSignInfo", heading = "Notes" },
+                                                          *nitpick-labels*
+A comment may start with a Conventional Comments label
+(https://conventionalcomments.org), optionally with decorations: >
+    question: why a loop and not sum()?
+    suggestion (non-blocking): rename x to total
+<
+The label tells the agent what you want without rules in the prompt: it is
+part of the comment's text. nitpick shows it as a sign beside the comment,
+highlights it in the comment buffer and completes it there with its
+'omnifunc' (|i_CTRL-X_CTRL-O|, or a completion plugin's omni source). `labels` lists the known ones; setting it
+replaces the whole list. The defaults: >lua
+    labels = {
+      { name = "praise",     sign = "+", hl = "DiagnosticSignOk" },
+      { name = "nitpick",    sign = "~", hl = "NitpickSign" },
+      { name = "suggestion", sign = ">", hl = "DiagnosticSignInfo" },
+      { name = "issue",      sign = "!", hl = "DiagnosticSignWarn" },
+      { name = "todo",       sign = "*", hl = "DiagnosticSignWarn" },
+      { name = "question",   sign = "?", hl = "DiagnosticSignHint" },
+      { name = "thought",    sign = "-", hl = "NitpickSign" },
+      { name = "chore",      sign = "c", hl = "NitpickSign" },
+      { name = "note",       sign = "i", hl = "DiagnosticSignInfo" },
     },
 <
 
-Highlights: `NitpickSign`, `NitpickVirtText`, `NitpickTitle`, `NitpickRange`.
+Highlights: `NitpickSign`, `NitpickVirtText`, `NitpickTitle`, `NitpickRange`,
+`NitpickLabel`.
 
 Statusline: `require("nitpick").status()` returns e.g. "ŋ 3 → a3f9c1"
 (pending comments, attached session), or "" when there is neither. For

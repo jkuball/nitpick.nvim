@@ -21,7 +21,6 @@ M.ns_anchor, M.ns_deco = ns_anchor, ns_deco
 ---@field col? integer charwise comments: start byte column (0-based)
 ---@field end_col? integer charwise comments: end byte column (0-based, exclusive)
 ---@field text string
----@field kind? string name of a configured kind; nil is unclassified
 ---@field source string[] lines at the time the comment was written
 ---@field created integer
 
@@ -154,30 +153,30 @@ function M.render(buf)
   local count = vim.api.nvim_buf_line_count(buf)
   for _, c in ipairs(comments) do
     if c.path == path and not c.lnum and cfg.virt_text.enabled then
-      local kind = config.kind(c.kind)
       local first = vim.split(c.text, "\n", { plain = true })[1]
       -- At the end of the first line: a virtual line above it would only show
       -- after scrolling up past it (CTRL-Y).
       vim.api.nvim_buf_set_extmark(buf, ns_deco, 0, 0, {
         virt_text = {
-          { cfg.virt_text.prefix .. "file: " .. (kind and (kind.name .. ": ") or "") .. first, "NitpickVirtText" },
+          { cfg.virt_text.prefix .. "file: " .. first, "NitpickVirtText" },
         },
         virt_text_pos = "eol",
       })
     elseif c.path == path then
       local s, e = math.min(c.lnum, count), math.min(c.end_lnum, count)
-      local kind = config.kind(c.kind)
+      local label = config.label(c.text)
       if cfg.signs.enabled then
-        -- Two cells: the type marker on the first line, then the range bracket,
-        -- so the bracket stays in one column whether a comment is typed or not.
+        -- Two cells: the range bracket, then the label's marker on the first
+        -- line, so the brackets line up with or without a label. The label's
+        -- color marks the whole range.
         for l = s, e do
           local bracket = s == e and cfg.signs.single
             or l == s and cfg.signs.first
             or l == e and cfg.signs.last
             or cfg.signs.middle
-          local marker = (kind and l == s) and kind.sign or " "
-          local hl = (kind and l == s) and kind.hl or "NitpickSign"
-          vim.api.nvim_buf_set_extmark(buf, ns_deco, l - 1, 0, { sign_text = marker .. bracket, sign_hl_group = hl })
+          local marker = (label and l == s) and label.sign or " "
+          local hl = label and label.hl or "NitpickSign"
+          vim.api.nvim_buf_set_extmark(buf, ns_deco, l - 1, 0, { sign_text = bracket .. marker, sign_hl_group = hl })
         end
       end
       if c.col then
@@ -190,10 +189,9 @@ function M.render(buf)
       end
       if cfg.virt_text.enabled then
         local first = vim.split(c.text, "\n", { plain = true })[1]
-        local label = kind and (kind.name .. ": ") or ""
         vim.api.nvim_buf_set_extmark(buf, ns_deco, s - 1, 0, {
           virt_text = {
-            { cfg.virt_text.prefix .. label .. truncate(first, cfg.virt_text.max_width), "NitpickVirtText" },
+            { cfg.virt_text.prefix .. truncate(first, cfg.virt_text.max_width), "NitpickVirtText" },
           },
           virt_text_pos = "eol",
         })
@@ -314,20 +312,6 @@ function M.update(id, text)
   render_all()
   changed()
   return c
-end
-
----@param ids string[]
----@param kind? string kind name, nil for unclassified
-function M.set_kind(ids, kind)
-  local set = {}
-  for _, id in ipairs(ids) do
-    set[id] = true
-  end
-  for _, c in ipairs(M.list()) do
-    if set[c.id] then c.kind = kind end
-  end
-  render_all()
-  changed()
 end
 
 function M.remove(ids)

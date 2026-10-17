@@ -7,38 +7,29 @@ end
 
 local command = vim.api.nvim_create_user_command
 
+local function complete_label(...)
+  return pc().complete_label(...)
+end
+
 command("NitTo", function(o)
   pc().pick(o)
 end, { bang = true, desc = "Attach to an agent session (! always shows the picker)" })
 
 command("Nit", function(o)
   pc().annotate(o)
-end, { range = true, nargs = "*", bang = true, desc = "Comment on [range]; text or open a comment buffer" })
+end, { range = true, nargs = "*", complete = complete_label, bang = true, desc = "Comment on [range]; text or open a comment buffer" })
 
 command("NitNote", function(o)
   pc().note(o)
-end, { nargs = "*", bang = true, desc = "A note on the review as a whole; without text, edit it (! starts a new one)" })
+end, { nargs = "*", complete = complete_label, bang = true, desc = "A note on the review as a whole; without text, edit it (! starts a new one)" })
 
 command("NitFile", function(o)
   pc().file_note(o)
-end, { nargs = "*", bang = true, desc = "A note on this file as a whole; without text, edit it (! starts a new one)" })
+end, { nargs = "*", complete = complete_label, bang = true, desc = "A note on this file as a whole; without text, edit it (! starts a new one)" })
 
 command("NitDelete", function(o)
   pc().delete(o)
 end, { range = true, desc = "Delete comments in [range] (or quickfix entries)" })
-
-command("NitKind", function(o)
-  pc().set_kind(o)
-end, {
-  range = true,
-  nargs = "?",
-  complete = function(lead)
-    return vim.tbl_filter(function(n)
-      return vim.startswith(n, lead)
-    end, pc().kind_names())
-  end,
-  desc = "Classify comments in [range] (or quickfix entries)",
-})
 
 command("Nits", function(o)
   pc().comments(o)
@@ -70,8 +61,6 @@ map("n", "<Plug>(nitpick-annotate-line)", function()
 end, { expr = true, desc = "Nit: annotate [count] lines" })
 map("n", "<Plug>(nitpick-delete)", "<Cmd>NitDelete<CR>", { desc = "Nit: delete on this line" })
 map("x", "<Plug>(nitpick-delete)", ":NitDelete<CR>", { silent = true, desc = "Nit: delete in selection" })
-map("n", "<Plug>(nitpick-kind)", "<Cmd>NitKind<CR>", { desc = "Nit: classify on this line" })
-map("x", "<Plug>(nitpick-kind)", ":NitKind<CR>", { silent = true, desc = "Nit: classify in selection" })
 map({ "n", "x", "o" }, "<Plug>(nitpick-next)", function()
   pc().jump(1, vim.v.count1)
 end, { desc = "Nit: next" })
@@ -91,6 +80,7 @@ vim.api.nvim_set_hl(0, "NitpickSign", { default = true, link = "DiagnosticSignIn
 vim.api.nvim_set_hl(0, "NitpickVirtText", { default = true, link = "Comment" })
 vim.api.nvim_set_hl(0, "NitpickTitle", { default = true, link = "Title" })
 vim.api.nvim_set_hl(0, "NitpickRange", { default = true, link = "DiagnosticUnderlineInfo" })
+vim.api.nvim_set_hl(0, "NitpickLabel", { default = true, link = "Label" })
 
 local group = vim.api.nvim_create_augroup("nitpick", {})
 local function store()

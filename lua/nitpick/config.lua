@@ -12,7 +12,7 @@ M.defaults = {
   startinsert = true,
   signs = {
     enabled = true,
-    single = "▶",
+    single = "ŋ",
     first = "┌",
     middle = "│",
     last = "└",
@@ -25,19 +25,20 @@ M.defaults = {
   -- Opening text of every review. A project can replace it with
   -- <root>/.pi/review-prompt.md (an empty file omits it).
   instructions = "My review comments on the code, each with the lines it refers to.",
-  -- Comment kinds, in the order their sections appear in the review. A comment
-  -- starts unclassified; :NitKind classifies it. Setting this replaces the whole list.
-  --   name     used by :NitKind and shown in the quickfix list / virtual text
-  --   sign     sign column marker for the first line
-  --   hl       highlight group of the sign
-  --   heading  section heading in the review message
-  kinds = {
-    { name = "change", sign = "!", hl = "DiagnosticSignWarn", heading = "Please change" },
-    { name = "question", sign = "?", hl = "DiagnosticSignHint", heading = "Questions" },
-    { name = "note", sign = "i", hl = "DiagnosticSignInfo", heading = "Notes" },
+  -- Conventional Comments labels (conventionalcomments.org) a comment may
+  -- start with: "question: why?", "suggestion (non-blocking): …". A label is
+  -- shown as a sign beside the comment. Setting this replaces the whole list.
+  labels = {
+    { name = "praise", sign = "+", hl = "DiagnosticSignOk" },
+    { name = "nitpick", sign = "~", hl = "NitpickSign" },
+    { name = "suggestion", sign = ">", hl = "DiagnosticSignInfo" },
+    { name = "issue", sign = "!", hl = "DiagnosticSignWarn" },
+    { name = "todo", sign = "*", hl = "DiagnosticSignWarn" },
+    { name = "question", sign = "?", hl = "DiagnosticSignHint" },
+    { name = "thought", sign = "-", hl = "NitpickSign" },
+    { name = "chore", sign = "c", hl = "NitpickSign" },
+    { name = "note", sign = "i", hl = "DiagnosticSignInfo" },
   },
-  -- Section heading for unclassified comments (only used when classified ones exist).
-  unclassified_heading = "Comments",
   -- Longest excerpt (in lines) quoted per comment.
   max_excerpt_lines = 200,
   -- Markers that define the project root, searched upwards from :pwd.
@@ -58,15 +59,20 @@ function M.get()
   local g = vim.g.nitpick or {}
   local cfg = vim.tbl_deep_extend("force", M.defaults, g, user)
   -- Lists are replaced, not merged index by index.
-  cfg.kinds = user.kinds or g.kinds or M.defaults.kinds
+  cfg.labels = user.labels or g.labels or M.defaults.labels
   return cfg
 end
 
----@return table? the configured type called `name`
-function M.kind(name)
+--- The configured label a comment starts with ("question: …",
+--- "issue (blocking): …"), if any.
+---@return table?
+function M.label(text)
+  local first = (text or ""):match("^%s*([^\n]*)")
+  local name = first:match("^([%a][%w-]*)%s*%b()%s*:") or first:match("^([%a][%w-]*)%s*:")
   if not name then return nil end
-  for _, t in ipairs(M.get().kinds) do
-    if t.name == name then return t end
+  name = name:lower()
+  for _, l in ipairs(M.get().labels) do
+    if l.name == name then return l end
   end
 end
 

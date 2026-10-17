@@ -50,24 +50,6 @@ local function location(c, lines)
   return ("lines %d-%d, from %d:%d to %d:%d"):format(c.lnum, c.end_lnum, c.lnum, scol, c.end_lnum, ecol)
 end
 
---- Comments grouped in the order of the configured kinds; unclassified last.
-local function sections(comments)
-  local cfg = config.get()
-  local groups, order = {}, {}
-  for _, t in ipairs(cfg.kinds) do
-    groups[t.name] = {}
-    table.insert(order, { heading = t.heading or t.name, list = groups[t.name] })
-  end
-  local unclassified = {}
-  table.insert(order, { heading = cfg.unclassified_heading, list = unclassified })
-  for _, c in ipairs(comments) do
-    table.insert(groups[c.kind or ""] or unclassified, c)
-  end
-  return vim.tbl_filter(function(sec)
-    return #sec.list > 0
-  end, order)
-end
-
 ---@param comments NitpickComment[] sorted by path and line
 ---@param opts? { preamble?: string }
 ---@return string
@@ -91,27 +73,14 @@ function M.format(comments, opts)
   end
   add(("Project root: `%s`"):format(root))
 
-  local groups = sections(comments)
-  -- A review without kinds needs no section headings.
-  local headed = #groups > 1 or (groups[1] and groups[1].list[1].kind ~= nil)
-  for _, sec in ipairs(groups) do
-    if headed then
-      add("")
-      add("## " .. sec.heading)
-    end
-    for _, c in ipairs(sec.list) do
-      if not c.lnum then
-        -- A note on the whole review, or on a whole file: no excerpt.
-        add("")
-        add((headed and "###" or "##") .. " " .. (c.path and ("`" .. store.display(c.path) .. "`") or "General"))
-        add("")
-        add(vim.trim(c.text))
-        goto continue
-      end
+  for _, c in ipairs(comments) do
+    add("")
+    if not c.lnum then
+      -- A note on the whole review, or on a whole file: no excerpt.
+      add("## " .. (c.path and ("`" .. store.display(c.path) .. "`") or "General"))
+    else
       local lines, note, ft = excerpt(root, c)
-      local where = location(c, lines)
-      add("")
-      add(("%s `%s`, %s%s"):format(headed and "###" or "##", store.display(c.path), where, note and (" (" .. note .. ")") or ""))
+      add(("## `%s`, %s%s"):format(store.display(c.path), location(c, lines), note and (" (" .. note .. ")") or ""))
       add("")
       if #lines > max_lines then
         lines = vim.list_extend(vim.list_slice(lines, 1, max_lines), { "… (" .. (#lines - max_lines) .. " more lines)" })
@@ -120,10 +89,9 @@ function M.format(comments, opts)
       add(f .. (ft or ""))
       vim.list_extend(out, lines)
       add(f)
-      add("")
-      add(vim.trim(c.text))
-      ::continue::
     end
+    add("")
+    add(vim.trim(c.text))
   end
   return table.concat(out, "\n") .. "\n"
 end

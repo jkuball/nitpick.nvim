@@ -33,7 +33,7 @@ end
 
 local function edit_comment(buf, c, mods)
   local id = c.id
-  editor.open({
+  local comment_buf = editor.open({
     name = ("nitpick://comment/%s"):format(range_label(c)),
     title = ("%s comment on %s   :w save · :wq done · :q! discard"):format(config.get().icon, range_label(c)),
     lines = c.text and vim.split(c.text, "\n", { plain = true }) or { "" },
@@ -63,6 +63,41 @@ local function edit_comment(buf, c, mods)
       end
     end,
   })
+  -- The label the first line starts with, as in "question: …".
+  local names = vim.tbl_map(function(l)
+    return l.name
+  end, config.get().labels)
+  vim.fn.matchadd("NitpickLabel", [[\v\c%1l^\s*\zs(]] .. table.concat(names, "|") .. [[)(\s*\([^)]*\))?\ze\s*:]])
+  vim.bo[comment_buf].omnifunc = "v:lua.require'nitpick'.omnifunc"
+end
+
+--- 'omnifunc' of comment buffers: a label at the start of the first line.
+--- Anywhere else it offers nothing (-3: leave completion quietly).
+function M.omnifunc(findstart, base)
+  if findstart == 1 then
+    local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+    local typed = vim.api.nvim_get_current_line():sub(1, col)
+    if row ~= 1 or not typed:match("^%s*%a*$") then return -3 end
+    return #typed:match("^%s*")
+  end
+  local items = {}
+  for _, l in ipairs(config.get().labels) do
+    if vim.startswith(l.name, base:lower()) then
+      table.insert(items, { word = l.name .. ": ", abbr = l.name, kind = l.sign })
+    end
+  end
+  return items
+end
+
+--- Completes a label ("question:") as the first word of a comment's text.
+function M.complete_label(lead, cmdline, pos)
+  local args = cmdline:sub(1, pos):match("^.-Nit%a*!?%s+(.*)$")
+  if not args or args:find("%s") then return {} end
+  local names = {}
+  for _, l in ipairs(config.get().labels) do
+    if vim.startswith(l.name, lead:lower()) then table.insert(names, l.name .. ":") end
+  end
+  return names
 end
 
 local ids_in_range -- defined with the lists below
@@ -213,8 +248,7 @@ local function qf_items(path)
         end_lnum = c.end_lnum,
         col = c.col and c.col + 1 or 0,
         end_col = c.end_col or 0,
-        text = (c.kind and ("[" .. c.kind .. "] ") or "")
-          .. (not c.path and "(general) " or not c.lnum and "(file) " or "")
+        text = (not c.path and "(general) " or not c.lnum and "(file) " or "")
           .. lines[1]
           .. (#lines > 1 and (" (+%d lines)"):format(#lines - 1) or ""),
         user_data = c.id,
@@ -310,38 +344,6 @@ function M.delete(opts)
   if not ids then return end
   store.remove(ids)
   notify(("deleted %d comment%s"):format(#ids, #ids == 1 and "" or "s"))
-end
-
-local NONE = "none"
-
---- Names accepted by :NitKind.
-function M.kind_names()
-  local names = vim.tbl_map(function(t)
-    return t.name
-  end, config.get().kinds)
-  table.insert(names, NONE)
-  return names
-end
-
---- :[range]NitKind [kind] – classify comments; without a kind, pick one.
----@param opts { line1: integer, line2: integer, args?: string }
-function M.set_kind(opts)
-  local ids = ids_in_range(opts)
-  if not ids then return end
-  local function apply(name)
-    if name == NONE then
-      store.set_kind(ids, nil)
-    elseif config.kind(name) then
-      store.set_kind(ids, name)
-    else
-      return notify(("unknown kind %q (one of: %s)"):format(name, table.concat(M.kind_names(), ", ")), vim.log.levels.ERROR)
-    end
-  end
-  local arg = vim.trim(opts.args or "")
-  if arg ~= "" then return apply(arg) end
-  vim.ui.select(M.kind_names(), { prompt = "Kind of nit", kind = "nitpick.kind" }, function(choice)
-    if choice then apply(choice) end
-  end)
 end
 
 function M.clear(opts)

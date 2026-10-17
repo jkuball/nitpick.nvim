@@ -7,20 +7,18 @@
 
 <p align="center"><em>The agent codes. You nitpick it directly from Neovim.</em></p>
 
-Leave review comments – nits – on lines and ranges while you read code, then
-send them to your coding agent's running session as one message (see
-[Integrations](#integrations)).
+Read the code your agent wrote, mark what bothers you, and send it all back as
+one review.
 
 Comments are made the way you edit text in Vim: an operator, an Ex command
 with a range, an ordinary buffer.
 
 ```vim
-:Nit Explain this condition            " current line
+:Nit question: why not sum()?          " current line, with a label
 :'<,'>Nit This block looks redundant   " visual selection
 :12,18Nit                              " opens a comment buffer: :w / :wq / :q!
 gbap                                   " the operator ("go bother"): a paragraph
 :NitNote Let's rethink the naming.     " a note on the whole review
-:NitKind question                      " classify (also from the quickfix list)
 :Nits                                  " everything pending, in the quickfix list
 :NitSend Please keep it short.         " send, with a leading message
 ```
@@ -32,14 +30,17 @@ gbap                                   " the operator ("go bother"): a paragraph
   comments are ordinary buffers, commands take ranges and `:vertical`/`:tab`.
 - **Charwise or linewise.** `gbiw` or a `v` selection remembers the exact
   columns and highlights them; `gbap` or `V` takes whole lines.
-- **Kinds instead of rules.** Classify nits as `change`, `question` or `note`
-  (configurable). The review groups them under these headings instead of
-  telling the model how to behave.
+- **Conventional Comments.** Start a nit with a
+  [label](https://conventionalcomments.org) – `question:`,
+  `suggestion (non-blocking):` – and the agent knows what you want, without
+  rules in the prompt. Labels show as signs and complete in `:Nit` and in the
+  comment buffer (its `omnifunc`).
 - **What you see is what is sent.** `:NitReview` opens the exact message in a
   buffer; edit it and `:wq` sends it, like a `git commit` message.
 - **Any file.** Files outside the project can be annotated too; the review
   names them by absolute path.
-- **One review per Neovim**, kept in memory while it runs.
+- **One review per Neovim**, kept in memory while it runs. Quitting Neovim
+  drops it without asking, so send before you `:qa`.
 
 ### Statusline
 
@@ -54,11 +55,10 @@ sections = { lualine_x = { function() return require("nitpick").status() end, "e
 
 | Command | |
 |---|---|
-| `:[range]Nit[!] [text]` | Comment on `[range]` (default: current line). With text it is stored directly; without, an ordinary Markdown buffer opens – `:w` saves, `:wq` saves and closes, `:q!` discards, writing it empty deletes the comment. An existing comment on the line/range is edited; `!` forces a new one. In a nitpick list, it edits the entry under the cursor. |
+| `:[range]Nit[!] [text]` | Comment on `[range]` (default: current line). With text it is stored directly; without, an ordinary Markdown buffer opens – `:w` saves, `:wq` saves and closes, `:q!` discards, writing it empty deletes the comment. An existing comment on the line/range is edited; `!` forces a new one. In a nitpick list, it edits the entry under the cursor. The first word completes to a label (`question:`). |
 | `:NitNote[!] [text]` | A note on the review as a whole, not on any line. Without text, edit the existing note (or start one); `!` starts a new one. |
 | `:NitFile[!] [text]` | The same for a note on the current file as a whole, shown at the end of its first line. |
 | `:[range]NitDelete` | Delete comments touching `[range]` – or, in a nitpick quickfix/location list window, the entries in `[range]`. |
-| `:[range]NitKind [kind]` | Classify comments (or list entries) as `change`, `question`, `note` – or `none`. Without a kind, pick one. |
 | `:Nits` | All pending comments in the quickfix list, kept up to date. |
 | `:LNits` | This file's pending comments in the window's location list. |
 | `:NitReview [text]` | The exact message the agent will receive, in a buffer – like a `git commit` message: `:w` saves, closing it (`:wq`) sends, `:q!` cancels. |
@@ -80,7 +80,6 @@ map("n", "<leader>nn", "<Plug>(nitpick-annotate-line)")
 map("x", "<leader>nn", "<Plug>(nitpick-annotate)")
 map("n", "<leader>no", "<Plug>(nitpick-note)")
 map("n", "<leader>nf", "<Plug>(nitpick-file)")
-map({ "n", "x" }, "<leader>nk", "<Plug>(nitpick-kind)")
 map({ "n", "x" }, "<leader>nd", "<Plug>(nitpick-delete)")
 map("n", "<leader>nq", "<Plug>(nitpick-qflist)")
 map("n", "<leader>nl", "<Plug>(nitpick-loclist)")
@@ -116,11 +115,14 @@ Then install the part for your agent.
 
 ## Integrations
 
-nitpick formats the review in Neovim and hands it over a Unix socket; each
-agent needs a small part that receives it. Pi shows the session's tag in its
-footer and Claude Code among the mode labels right of its prompt
-(`ŋ nvim a3f9c1`), so you can tell sessions apart in `:NitTo`. The protocol is
-in `:help nitpick-bridge`.
+All of nitpick's logic lives in Neovim: it writes the review and hands it over
+a Unix socket. An agent only needs a small integration that receives it and
+delivers it as a user message – each one here is a few hundred lines, and
+updating nitpick never means restarting your agent. Adding another agent means
+speaking the two-message protocol in `:help nitpick-bridge`.
+
+Each integration shows the session's tag (`ŋ nvim a3f9c1`), so you can tell
+sessions apart in `:NitTo`.
 
 ### Pi
 

@@ -11,7 +11,9 @@ vim.env.XDG_RUNTIME_DIR = nil
 
 vim.g.mapleader = " "
 vim.opt.rtp:prepend(plugin)
-vim.cmd.runtime("plugin/nitpick.lua")
+-- An nvim that bundles nitpick has loaded its own copy already, even with --clean.
+vim.g.loaded_nitpick = nil
+vim.cmd.source(plugin .. "/plugin/nitpick.lua")
 require("nitpick").setup({ startinsert = false, open_cmd = "split" })
 -- The mappings the documentation suggests; the plugin itself maps nothing.
 vim.keymap.set({ "n", "x" }, "gb", "<Plug>(nitpick-annotate)")
@@ -320,10 +322,7 @@ it(":NitNote adds notes on the whole review", function()
 
   vim.cmd("Nits")
   eq(vim.fn.getqflist()[1].text, "(general) We should rethink the naming overall.")
-  vim.cmd("1NitKind question")
   vim.cmd("cclose")
-  text = require("nitpick.review").format(store.list())
-  assert(text:find("\n## Questions\n\n### General\n\nWe should rethink"), text)
   -- Notes are not on any line, so ]n skips them.
   vim.api.nvim_win_set_cursor(0, { 1, 0 })
   keys("]n")
@@ -495,49 +494,87 @@ it("review format", function()
   }, "\n"))
 end)
 
-it(":NitKind classifies; the review is grouped by type", function()
-  vim.cmd("3Nit why?")
-  vim.cmd("5,6Nit rename")
-  vim.cmd("8Nit fyi")
-  vim.cmd("3NitKind question")
-  vim.cmd("5NitKind change")
-  local sign
-  for _, m in ipairs(vim.api.nvim_buf_get_extmarks(0, store.ns_deco, { 4, 0 }, { 4, -1 }, { details = true })) do
-    sign = m[4].sign_text and vim.trim(m[4].sign_text) or sign
+it("Conventional Comments labels show as signs and complete in :Nit", function()
+  vim.cmd("3Nit question: why?")
+  vim.cmd("5,6Nit suggestion (non-blocking): rename")
+  vim.cmd("8Nit Warning: not a label")
+  vim.cmd("10Nit NITPICK: case does not matter")
+  local function marker(row)
+    for _, m in ipairs(vim.api.nvim_buf_get_extmarks(0, store.ns_deco, { row - 1, 0 }, { row - 1, -1 }, { details = true })) do
+      if m[4].sign_text then return vim.trim(m[4].sign_text) end
+    end
   end
-  eq(sign, "!┌", "type marker beside the range bracket")
-  -- In the quickfix window the range refers to entries.
-  vim.cmd("Nits")
-  eq(vim.fn.getqflist()[1].text, "[question] why?")
-  vim.cmd("3NitKind note")
-  vim.cmd("cclose")
-  eq(vim.tbl_map(function(c)
-    return c.kind or "-"
-  end, store.list()), { "question", "change", "note" })
-  vim.cmd("8NitKind none")
+  eq({ marker(3), marker(5), marker(6), marker(8), marker(10) }, { "ŋ?", "┌>", "└", "ŋ", "ŋ~" })
+  -- A label colors every line of its range, not just the first.
+  local function color(row)
+    for _, m in ipairs(vim.api.nvim_buf_get_extmarks(0, store.ns_deco, { row - 1, 0 }, { row - 1, -1 }, { details = true })) do
+      if m[4].sign_text then return m[4].sign_hl_group end
+    end
+  end
+  eq({ color(5), color(6), color(8) }, { "DiagnosticSignInfo", "DiagnosticSignInfo", "NitpickSign" })
 
+  -- The label stays part of the text, in the list and in the review alike.
+  vim.cmd("Nits")
+  eq(vim.fn.getqflist()[1].text, "question: why?")
+  vim.cmd("cclose")
   local text = require("nitpick.review").format(store.list())
-  local headings = {}
-  for h in text:gmatch("\n(#+ [^\n]+)") do
-    table.insert(headings, h)
-  end
-  eq(headings, {
-    "## Please change",
-    "### `src/app.py`, lines 5-6",
-    "## Questions",
-    "### `src/app.py`, line 3",
-    "## Comments",
-    "### `src/app.py`, line 8",
-  })
+  assert(text:find("\n## `src/app%.py`, line 3\n\n```python\nline 3\n```\n\nquestion: why%?\n"), text)
+  assert(not text:find("\n### "), "no sections")
+
+  eq(vim.fn.getcompletion("Nit qu", "cmdline"), { "question:" })
+  eq(vim.fn.getcompletion("3,4Nit sugg", "cmdline"), { "suggestion:" })
+  eq(vim.fn.getcompletion("NitNote n", "cmdline"), { "nitpick:", "note:" })
+  eq(vim.fn.getcompletion("Nit question: wh", "cmdline"), {}, "only the first word")
 end)
 
-it("custom kinds replace the defaults", function()
-  require("nitpick").setup({ kinds = { { name = "todo", sign = "T", heading = "Todo" } } })
-  vim.cmd("2Nit later")
-  vim.cmd("2NitKind todo")
-  eq(require("nitpick").kind_names(), { "todo", "none" })
-  assert(require("nitpick.review").format(store.list()):find("\n## Todo\n"))
-  require("nitpick.config").setup({ kinds = require("nitpick.config").defaults.kinds })
+it("a custom label list replaces the defaults", function()
+  require("nitpick").setup({ labels = { { name = "later", sign = "L", hl = "NitpickSign" } } })
+  vim.cmd("2Nit later: look at this")
+  vim.cmd("4Nit question: no longer a label")
+  eq(vim.fn.getcompletion("Nit ", "cmdline"), { "later:" })
+  local signs = {}
+  for _, m in ipairs(vim.api.nvim_buf_get_extmarks(0, store.ns_deco, 0, -1, { details = true })) do
+    if m[4].sign_text then signs[m[2] + 1] = vim.trim(m[4].sign_text) end
+  end
+  eq(signs, { [2] = "ŋL", [4] = "ŋ" })
+  require("nitpick.config").setup({ labels = require("nitpick.config").defaults.labels })
+end)
+
+it("the comment buffer completes labels with its omnifunc", function()
+  vim.cmd("Nit!")
+  eq(vim.bo.omnifunc, "v:lua.require'nitpick'.omnifunc")
+  -- Typed like a person would: the first match is inserted with its colon.
+  keys("iqu<C-x><C-o><Esc>")
+  eq(vim.fn.getline(1), "question: ")
+  -- Only the start of the first line: elsewhere it offers nothing.
+  local omni = require("nitpick").omnifunc
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { "why sug", "sug" })
+  vim.api.nvim_win_set_cursor(0, { 1, 7 })
+  eq(omni(1, ""), -3)
+  vim.api.nvim_win_set_cursor(0, { 2, 3 })
+  eq(omni(1, ""), -3)
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { "  sug" })
+  vim.api.nvim_win_set_cursor(0, { 1, 5 })
+  eq(omni(1, ""), 2)
+  eq(vim.tbl_map(function(i)
+    return i.word
+  end, omni(0, "sug")), { "suggestion: " })
+  vim.cmd("quit!")
+end)
+
+it("the comment buffer highlights the label", function()
+  vim.cmd("Nit!")
+  local pattern
+  for _, m in ipairs(vim.fn.getmatches()) do
+    if m.group == "NitpickLabel" then pattern = m.pattern end
+  end
+  assert(pattern, "a NitpickLabel match")
+  -- Only on the first line, and only the label with its decoration.
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { "issue (blocking): x", "issue: not here" })
+  vim.api.nvim_win_set_cursor(0, { 2, 0 })
+  eq(vim.fn.searchpos(pattern, "bcnw"), { 1, 1 })
+  eq(vim.fn.matchstr(vim.fn.getline(1), (pattern:gsub("%%1l", ""))), "issue (blocking)")
+  vim.cmd("quit!")
 end)
 
 it("project prompt replaces the instructions", function()

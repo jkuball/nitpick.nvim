@@ -31,9 +31,15 @@ function post(socketPath: string, body: unknown): Promise<number> {
   });
 }
 
+// The packaged plugin's entry point when $NITPICK_CLAUDE_PLUGIN names one,
+// else the source next to this file.
+const [command, args] = process.env.NITPICK_CLAUDE_PLUGIN
+  ? [join(process.env.NITPICK_CLAUDE_PLUGIN, "bin/nitpick-bridge"), []]
+  : [process.execPath, [join(import.meta.dirname, "bridge-helper.ts")]];
+
 test("the helper bridges Neovim and the mod", async () => {
   const dir = join(mkdtempSync(join(tmpdir(), "nitpick-claude-")), "sockets");
-  const child = spawn(process.execPath, [join(import.meta.dirname, "bridge-helper.ts")], {
+  const child = spawn(command, args, {
     env: { ...process.env, NITPICK_DIR: dir },
     stdio: ["ignore", "pipe", "inherit"],
   });

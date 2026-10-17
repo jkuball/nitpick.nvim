@@ -1,7 +1,8 @@
 -- Headless tests: nvim --clean --headless -l tests/nvim_test.lua
--- Run from the repository root. Uses throwaway state and socket directories.
+-- Tests the plugin in $NITPICK_PLUGIN (a built package), else the one in the
+-- current directory. Uses throwaway state and socket directories.
 
-local repo = vim.fn.getcwd()
+local plugin = vim.env.NITPICK_PLUGIN or vim.fn.getcwd()
 local tmp = vim.fn.tempname()
 vim.fn.mkdir(tmp, "p")
 vim.env.XDG_STATE_HOME = tmp .. "/state"
@@ -9,7 +10,7 @@ vim.env.NITPICK_DIR = tmp .. "/sockets"
 vim.env.XDG_RUNTIME_DIR = nil
 
 vim.g.mapleader = " "
-vim.opt.rtp:prepend(repo)
+vim.opt.rtp:prepend(plugin)
 vim.cmd.runtime("plugin/nitpick.lua")
 require("nitpick").setup({ startinsert = false, open_cmd = "split" })
 -- The mappings the documentation suggests; the plugin itself maps nothing.

@@ -13,6 +13,8 @@ Neovim and the agents only talk through the socket protocol in
 
 ## Tests
 
+`nix develop` gives you Neovim, Node.js and the formatter (`nix fmt`).
+
 ```sh
 nix flake check
 ```
@@ -29,3 +31,9 @@ The mod's own tests use Claude Code's test kit and need the `claude` binary:
 ```sh
 claude plugin test integrations/claude
 ```
+
+## Versions
+
+The version lives in `flake.nix` (`options.version`). Claude Code reads its
+own from `integrations/claude/.claude-plugin/plugin.json`, so bump both;
+`nix flake check` fails while they differ.

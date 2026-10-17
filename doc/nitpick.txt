@@ -1,4 +1,4 @@
-*nitpick.txt*  Code reviews from Neovim to a running Pi or Claude Code session
+*nitpick.txt*  Neovim-native code review for coding agents
 
 ==============================================================================
 CONTENTS                                                  *nitpick*
@@ -13,13 +13,13 @@ CONTENTS                                                  *nitpick*
 1. INTRODUCTION                                           *nitpick-intro*
 
 Collect review comments – nits – on lines and ranges while you read code,
-then send them to your coding agent, Pi or Claude Code, as one message.
+then send them to your coding agent as one message.
 Comments are anchored with extmarks, shown in the sign column and as
 virtual text. Each Neovim has one review, kept in memory for as long as it
 runs.
 
-The agent needs nitpick's part for it: the Pi extension or the Claude Code
-mod (see |nitpick-bridge|). Either listens in every interactive session.
+Your agent needs nitpick's integration for it (see |nitpick-bridge|); it
+listens in every interactive session.
 
 The project root is found from |:pwd| (see `root_markers`). It decides how
 paths appear in the review (relative to it) and which agent session |:NitTo|
@@ -89,9 +89,8 @@ review names them by their absolute path.
 :NitSend [text]                                            *:NitSend*
     Send all pending comments. [text] is put in front of the review. The
     agent takes it the most immediate way it has: idle, it starts a turn;
-    busy, Pi steers the running turn with it, while Claude Code follows up
-    once the turn ends. Comments are only removed once the agent accepted
-    them.
+    busy, it takes the review as early as it can (|nitpick-bridge|).
+    Comments are only removed once the agent accepted them.
 
 :NitClear[!]                                               *:NitClear*
     Delete all pending comments after confirmation ([!] skips it).
@@ -100,10 +99,9 @@ review names them by their absolute path.
     Attach to the agent session reviews go to. If exactly one session runs in
     this project, attach to it directly; otherwise (or with [!]) list all
     running sessions with |vim.ui.select()|, those of this project first.
-    Each entry shows the agent and the session's tag, which the agent also
-    shows ("ŋ nvim a3f9c1" in Pi's footer and among Claude Code's mode
-    labels), its title and its directory. Before you attach,
-    |:NitSend| does the same as |:NitTo|.
+    Each entry shows the agent, the session's tag – which the agent shows
+    too, as "ŋ nvim a3f9c1" – its title and its directory. Before you
+    attach, |:NitSend| does the same as |:NitTo|.
 
 ==============================================================================
 3. MAPPINGS                                               *nitpick-mappings*

@@ -4,13 +4,13 @@
     "name": "Jonas Kuball"
   },
   "metadata": {
-    "description": "nitpick.nvim: code reviews from Neovim for Claude Code"
+    "description": "nitpick.nvim integration for Claude Code"
   },
   "plugins": [
     {
       "name": "nitpick",
       "source": "./integrations/claude",
-      "description": "Receive code reviews written in Neovim (nitpick.nvim) as prompts"
+      "description": "nitpick.nvim integration for Claude Code"
     }
   ]
 }

@@ -1,5 +1,5 @@
--- Discovery of and requests to running agent sessions, Pi or Claude Code
--- (see integrations/pi/bridge.ts).
+-- Discovery of and requests to running agent sessions (the protocol:
+-- integrations/pi/bridge.ts).
 
 local config = require("nitpick.config")
 
@@ -143,7 +143,7 @@ end
 function M.pick(root, cb, opts)
   M.list(function(sessions)
     if #sessions == 0 then
-      vim.notify("nitpick: no running agent session found (is nitpick loaded in Pi or Claude Code?)", vim.log.levels.WARN)
+      vim.notify("nitpick: no running agent session found (is nitpick's integration loaded in your agent?)", vim.log.levels.WARN)
       return cb(nil)
     end
     local matching = vim.tbl_filter(function(s)

@@ -5,10 +5,11 @@
   </picture>
 </h1>
 
-Nitpick your coding agent's work from Neovim. Leave review comments – nits –
-on lines and ranges while you read code, then send them to a running
-[Pi](https://pi.dev) or [Claude Code](https://code.claude.com) session as one
-message.
+<p align="center"><em>The agent codes. You nitpick it directly from Neovim.</em></p>
+
+Leave review comments – nits – on lines and ranges while you read code, then
+send them to your coding agent's running session as one message (see
+[Integrations](#integrations)).
 
 Comments are made the way you edit text in Vim: an operator, an Ex command
 with a range, an ordinary buffer.
@@ -61,7 +62,7 @@ sections = { lualine_x = { function() return require("nitpick").status() end, "e
 | `:Nits` | All pending comments in the quickfix list, kept up to date. |
 | `:LNits` | This file's pending comments in the window's location list. |
 | `:NitReview [text]` | The exact message the agent will receive, in a buffer – like a `git commit` message: `:w` saves, closing it (`:wq`) sends, `:q!` cancels. |
-| `:NitSend [text]` | Send the review, `[text]` goes first. Idle, the agent starts a turn; busy, Pi steers the running turn and Claude Code follows up after it. |
+| `:NitSend [text]` | Send the review, `[text]` goes first. Idle, the agent starts a turn; busy, it takes the review as early as it can (see [Integrations](#integrations)). |
 | `:NitClear[!]` | Delete all pending comments (`!` skips the confirmation). |
 | `:NitTo[!]` | Attach to the sole agent session of this project; with several (or `!`), pick one. |
 
@@ -91,6 +92,28 @@ map("n", "<leader>nt", "<Plug>(nitpick-to)")
 
 (vim-unimpaired uses `]n`/`[n` for conflict markers.)
 
+## Installation
+
+Neovim 0.11 or newer, e.g. with lazy.nvim:
+
+```lua
+{ "jkuball/nitpick.nvim" }
+```
+
+With Nix, add the flake and use its nixvim module (or
+`packages.<system>.vimPlugin`):
+
+```nix
+inputs.nitpick.url = "github:jkuball/nitpick.nvim";
+inputs.nitpick.inputs.nixpkgs.follows = "nixpkgs";
+```
+
+```nix
+imports = [ inputs.nitpick.nixvimModules.default ];
+```
+
+Then install the part for your agent.
+
 ## Integrations
 
 nitpick formats the review in Neovim and hands it over a Unix socket; each
@@ -105,6 +128,13 @@ An extension that listens in every interactive Pi session and delivers the
 review as a user message. `/nvim [on|off]` shows or toggles it,
 `NITPICK_AUTOSTART=0` turns off the automatic start.
 
+```sh
+pi install git:github.com/jkuball/nitpick.nvim
+```
+
+For a single run, `pi -e <checkout>/integrations/pi/index.ts`. With Nix, load
+`"${inputs.nitpick.packages.<system>.piExtension}/index.ts"` as an extension.
+
 ### Claude Code
 
 A [mod](https://code.claude.com/docs/en/plugins/mods/overview), for Claude
@@ -112,40 +142,13 @@ Code 2.1.287 or newer. Mods cannot open sockets, so it starts a small Node
 process (Node.js 22.18 or newer) for the session's life. The review arrives as
 a prompt in your own words.
 
-## Installation
-
-**Neovim** (0.11 or newer), e.g. with lazy.nvim:
-
-```lua
-{ "jkuball/nitpick.nvim" }
-```
-
-**Pi:**
-
-```sh
-pi install git:github.com/jkuball/nitpick.nvim
-```
-
-**Claude Code:**
-
 ```
 /plugin install nitpick --marketplace jkuball/nitpick.nvim
 ```
 
-### Nix
-
-The flake provides `packages.<system>.{vimPlugin,piExtension,claudePlugin}`,
-`overlays.default`, and modules:
-
-```nix
-inputs.nitpick.url = "github:jkuball/nitpick.nvim";
-inputs.nitpick.inputs.nixpkgs.follows = "nixpkgs";
-```
-
-- nixvim: `imports = [ inputs.nitpick.nixvimModules.default ];`
-- Pi, with [pi.nix](https://github.com/lukasl-dev/pi.nix): `imports = [ inputs.nitpick.homeModules.pi ];`
-- Claude Code, with Home Manager's `programs.claude-code`:
-  `imports = [ inputs.nitpick.homeModules.claude-code ];`
+For a single session, `claude --plugin-dir <checkout>/integrations/claude`.
+With Nix, point `CLAUDE_CODE_PLUGIN_DIRS` at
+`inputs.nitpick.packages.<system>.claudePlugin`, which brings its own Node.
 
 ## Contributing
 

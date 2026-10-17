@@ -1,7 +1,7 @@
 {
   "name": "nitpick",
   "version": "0.1.0",
-  "description": "Receive code reviews written in Neovim (nitpick.nvim) as prompts",
+  "description": "nitpick.nvim integration for Claude Code",
   "author": { "name": "Jonas Kuball" },
   "license": "MIT"
 }

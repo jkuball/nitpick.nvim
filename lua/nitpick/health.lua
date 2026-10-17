@@ -21,7 +21,7 @@ function M.check()
   local stat = vim.uv.fs_stat(dir)
   if not stat then
     health.warn("Socket directory " .. dir .. " does not exist", {
-      "Start Pi or Claude Code with nitpick loaded; the bridge creates the directory.",
+      "Start your agent with nitpick's integration loaded; it creates the directory.",
       "Both sides must agree on $NITPICK_DIR / $XDG_RUNTIME_DIR.",
     })
     return
@@ -37,7 +37,7 @@ function M.check()
   end)
   if not found or #found == 0 then
     health.warn("No running agent session answered", {
-      "In Pi, `/nvim` shows the bridge status; in Claude Code, look for `ŋ nvim <tag>` right of the prompt.",
+      "An agent with nitpick's integration shows `ŋ nvim <tag>`; see :help nitpick-bridge.",
     })
     return
   end

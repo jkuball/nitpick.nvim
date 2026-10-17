@@ -1,4 +1,4 @@
 {
-  "description": "nitpick: the Neovim review bridge",
+  "description": "nitpick.nvim integration for Claude Code",
   "modules": ["./register.js"]
 }

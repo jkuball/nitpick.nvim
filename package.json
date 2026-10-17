@@ -1,7 +1,7 @@
 {
   "name": "nitpick.nvim",
   "private": true,
-  "description": "Pi extension of nitpick.nvim: receive code reviews written in Neovim",
+  "description": "nitpick.nvim integration for Pi",
   "license": "MIT",
   "pi": {
     "extensions": [

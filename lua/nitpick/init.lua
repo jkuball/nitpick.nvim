@@ -1,5 +1,5 @@
--- nitpick: collect a code review in Neovim and hand it to a running agent
--- session (Pi or Claude Code).
+-- nitpick: collect a code review in Neovim and hand it to a running coding
+-- agent session.
 
 local config = require("nitpick.config")
 local editor = require("nitpick.editor")

@@ -14,6 +14,8 @@ Neovim and the agents only talk through the socket protocol in
 ## Tests
 
 `nix develop` gives you Neovim, Node.js and the formatter (`nix fmt`).
+`nix run .` starts a Neovim with the plugin from your tree and the suggested
+mappings (`modules/try/init.lua`).
 
 ```sh
 nix flake check

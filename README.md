@@ -113,6 +113,10 @@ imports = [ inputs.nitpick.nixvimModules.default ];
 
 Then install the part for your agent.
 
+To try it first, without touching your config: `nix run
+github:jkuball/nitpick.nvim` starts a plain Neovim with nitpick and the
+mappings above.
+
 ## Integrations
 
 All of nitpick's logic lives in Neovim: it writes the review and hands it over

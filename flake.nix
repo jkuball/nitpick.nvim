@@ -8,7 +8,7 @@
     import-tree.url = "github:denful/import-tree";
   };
 
-  outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } ({ config, lib, ... }: {
+  outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } ({ lib, ... }: {
     options.root = lib.mkOption {
       type = lib.types.path;
       default = ./.;
@@ -21,14 +21,8 @@
       readOnly = true;
     };
 
-    imports = [
-      inputs.flake-parts.flakeModules.modules
-      (inputs.import-tree ./modules)
-    ];
+    imports = [ (inputs.import-tree ./modules) ];
 
-    config = {
-      systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
-      flake.nixvimModules = config.flake.modules.nixvim;
-    };
+    config.systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
   });
 }

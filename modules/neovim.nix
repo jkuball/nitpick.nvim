@@ -1,4 +1,4 @@
-{ config, lib, self, ... }:
+{ config, lib, ... }:
 let
   inherit (config) root version;
 in
@@ -35,9 +35,5 @@ in
           nvim --clean --headless -l ${root + "/tests/nvim_test.lua"}
         touch $out
       '';
-  };
-
-  flake.modules.nixvim.default = { pkgs, ... }: {
-    extraPlugins = [ self.packages.${pkgs.stdenv.hostPlatform.system}.vimPlugin ];
   };
 }

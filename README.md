@@ -101,8 +101,8 @@ Neovim 0.11 or newer, e.g. with lazy.nvim:
 { "jkuball/nitpick.nvim" }
 ```
 
-With Nix, add the flake and use its nixvim module (or
-`packages.<system>.vimPlugin`):
+With Nix, add the flake and install `packages.<system>.vimPlugin`, e.g. with
+nixvim:
 
 ```nix
 inputs.nitpick.url = "github:jkuball/nitpick.nvim";
@@ -110,7 +110,7 @@ inputs.nitpick.inputs.nixpkgs.follows = "nixpkgs";
 ```
 
 ```nix
-imports = [ inputs.nitpick.nixvimModules.default ];
+extraPlugins = [ inputs.nitpick.packages.${pkgs.stdenv.hostPlatform.system}.vimPlugin ];
 ```
 
 Then install the part for your agent.

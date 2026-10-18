@@ -33,7 +33,7 @@ end
 
 local function edit_comment(buf, c, mods)
   local id = c.id
-  local comment_buf = editor.open({
+  editor.open({
     name = ("nitpick://comment/%s"):format(range_label(c)),
     title = ("%s comment on %s   :w save · :wq done · :q! discard"):format(config.get().icon, range_label(c)),
     lines = c.text and vim.split(c.text, "\n", { plain = true }) or { "" },
@@ -63,15 +63,9 @@ local function edit_comment(buf, c, mods)
       end
     end,
   })
-  -- The label the first line starts with, as in "question: …".
-  local names = vim.tbl_map(function(l)
-    return l.name
-  end, config.get().labels)
-  vim.fn.matchadd("NitpickLabel", [[\v\c%1l^\s*\zs(]] .. table.concat(names, "|") .. [[)(\s*\([^)]*\))?\ze\s*:]])
-  vim.bo[comment_buf].omnifunc = "v:lua.require'nitpick'.omnifunc"
 end
 
---- 'omnifunc' of comment buffers: a label at the start of the first line.
+--- 'omnifunc' of comment buffers (set in ftplugin/nitpick.lua): a label at the start of the first line.
 --- Anywhere else it offers nothing (-3: leave completion quietly).
 function M.omnifunc(findstart, base)
   if findstart == 1 then

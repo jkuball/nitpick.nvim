@@ -180,8 +180,9 @@ A comment may start with a Conventional Comments label
 <
 The label tells the agent what you want without rules in the prompt: it is
 part of the comment's text. nitpick shows it as a sign beside the comment,
-highlights it in the comment buffer and completes it there with its
-'omnifunc' (|i_CTRL-X_CTRL-O|, or a completion plugin's omni source). `labels` lists the known ones; setting it
+highlights it in the comment buffer in the same color and completes it there
+with its 'omnifunc' (|i_CTRL-X_CTRL-O|, or a completion plugin's omni
+source); both come from the "nitpick" ftplugin. `labels` lists the known ones; setting it
 replaces the whole list. The defaults: >lua
     labels = {
       { name = "praise",     sign = "+", hl = "DiagnosticSignOk" },
@@ -196,8 +197,13 @@ replaces the whole list. The defaults: >lua
     },
 <
 
-Highlights: `NitpickSign`, `NitpickVirtText`, `NitpickTitle`, `NitpickRange`,
-`NitpickLabel`.
+Highlights: `NitpickSign`, `NitpickVirtText`, `NitpickTitle`, `NitpickRange`.
+A label's `hl` colors its sign and the label in the comment buffer.
+
+Comment and review buffers have the filetype "markdown.nitpick": Markdown,
+plus "nitpick" for configuring them apart. Their title is the 'winbar'; a
+plugin that draws its own winbar replaces it unless told to skip them, e.g.
+lualine: `options = { disabled_filetypes = { winbar = { "nitpick" } } }`.
 
 Statusline: `require("nitpick").status()` returns e.g. "ŋ 3 → a3f9c1"
 (pending comments, attached session), or "" when there is neither. For

@@ -40,7 +40,9 @@ function M.open(opts)
   vim.bo[buf].swapfile = false
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, opts.lines)
   vim.bo[buf].modified = false
-  vim.bo[buf].filetype = opts.filetype or "markdown"
+  -- Markdown, tagged so that other plugins can tell these buffers apart
+  -- (e.g. lualine's disabled_filetypes, which would replace the winbar).
+  vim.bo[buf].filetype = opts.filetype or "markdown.nitpick"
 
   vim.api.nvim_create_autocmd("BufWriteCmd", {
     buffer = buf,

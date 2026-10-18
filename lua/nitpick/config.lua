@@ -67,12 +67,23 @@ end
 --- "issue (blocking): …"), if any.
 ---@return table?
 function M.label(text)
-  local first = (text or ""):match("^%s*([^\n]*)")
-  local name = first:match("^([%a][%w-]*)%s*%b()%s*:") or first:match("^([%a][%w-]*)%s*:")
-  if not name then return nil end
+  return (M.label_at((text or ""):match("^%s*([^\n]*)")))
+end
+
+--- The label a line starts with, and where: the byte range (0-based, end
+--- exclusive) of the label with its decoration, as in "issue (blocking)".
+---@return table? label
+---@return integer? start_col
+---@return integer? end_col
+function M.label_at(line)
+  local s, name, e = line:match("^%s*()([%a][%w-]*)%s*%b()()%s*:")
+  if not s then
+    s, name, e = line:match("^%s*()([%a][%w-]*)()%s*:")
+  end
+  if not s then return nil end
   name = name:lower()
   for _, l in ipairs(M.get().labels) do
-    if l.name == name then return l end
+    if l.name == name then return l, s - 1, e - 1 end
   end
 end
 

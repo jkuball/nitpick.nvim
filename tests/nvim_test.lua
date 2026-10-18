@@ -562,18 +562,32 @@ it("the comment buffer completes labels with its omnifunc", function()
   vim.cmd("quit!")
 end)
 
+it("comment buffers are markdown.nitpick", function()
+  vim.cmd("3Nit")
+  eq(vim.bo.filetype, "markdown.nitpick")
+  eq(vim.treesitter.language.get_lang("markdown.nitpick"), "markdown")
+end)
+
 it("the comment buffer highlights the label", function()
   vim.cmd("Nit!")
-  local pattern
-  for _, m in ipairs(vim.fn.getmatches()) do
-    if m.group == "NitpickLabel" then pattern = m.pattern end
+  local ns = vim.api.nvim_create_namespace("nitpick-label")
+  local function marks()
+    return vim.tbl_map(function(m)
+      return { m[2], m[3], m[4].end_col, m[4].hl_group }
+    end, vim.api.nvim_buf_get_extmarks(0, ns, 0, -1, { details = true }))
   end
-  assert(pattern, "a NitpickLabel match")
   -- Only on the first line, and only the label with its decoration.
-  vim.api.nvim_buf_set_lines(0, 0, -1, false, { "issue (blocking): x", "issue: not here" })
-  vim.api.nvim_win_set_cursor(0, { 2, 0 })
-  eq(vim.fn.searchpos(pattern, "bcnw"), { 1, 1 })
-  eq(vim.fn.matchstr(vim.fn.getline(1), (pattern:gsub("%%1l", ""))), "issue (blocking)")
+  keys("i  issue (blocking): x<CR>issue: not here<Esc>")
+  eq(marks(), { { 0, 2, 18, "DiagnosticSignWarn" } }, "in the label's color")
+  keys("gg0dw")
+  eq(marks(), { { 0, 0, 16, "DiagnosticSignWarn" } }, "follows edits")
+  keys("Ino <Esc>")
+  eq(marks(), {}, "no label, no highlight")
+  -- The buffer carries it, so a second window shows it too.
+  keys("ccquestion: y<Esc>")
+  vim.cmd("split")
+  eq(marks(), { { 0, 0, 8, "DiagnosticSignHint" } })
+  vim.cmd("quit!")
   vim.cmd("quit!")
 end)
 

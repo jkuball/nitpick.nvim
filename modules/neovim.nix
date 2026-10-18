@@ -12,6 +12,7 @@ in
         fileset = lib.fileset.unions [
           (root + "/lua")
           (root + "/plugin")
+          (root + "/ftplugin")
           (root + "/doc")
           (root + "/LICENSE")
           (root + "/README.md")

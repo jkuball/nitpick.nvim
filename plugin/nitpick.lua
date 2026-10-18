@@ -80,7 +80,9 @@ vim.api.nvim_set_hl(0, "NitpickSign", { default = true, link = "DiagnosticSignIn
 vim.api.nvim_set_hl(0, "NitpickVirtText", { default = true, link = "Comment" })
 vim.api.nvim_set_hl(0, "NitpickTitle", { default = true, link = "Title" })
 vim.api.nvim_set_hl(0, "NitpickRange", { default = true, link = "DiagnosticUnderlineInfo" })
-vim.api.nvim_set_hl(0, "NitpickLabel", { default = true, link = "Label" })
+
+-- Comment and review buffers are "markdown.nitpick"; Tree-sitter reads them as Markdown.
+vim.treesitter.language.register("markdown", "markdown.nitpick")
 
 local group = vim.api.nvim_create_augroup("nitpick", {})
 local function store()

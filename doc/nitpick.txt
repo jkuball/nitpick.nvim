@@ -12,16 +12,18 @@ CONTENTS                                                  *nitpick*
 ==============================================================================
 1. INTRODUCTION                                           *nitpick-intro*
 
-Collect review comments – nits – on lines and ranges while you read code,
-then send them to your coding agent as one message.
+Read the code your agent wrote, mark what bothers you, and send it all back
+as one review.
+
 Comments are anchored with extmarks, shown in the sign column and as
-virtual text. Each Neovim has one review, kept in memory for as long as it
-runs. Quitting Neovim drops it, without asking.
+virtual text. Each instance of Neovim has one review, kept in memory for as
+long as it runs. Quitting Neovim drops it, without asking.
 
 Your agent needs nitpick's integration for it (see |nitpick-bridge|); it
 listens in every interactive session.
 
-The project root is found from |:pwd| (see `root_markers`). It decides how
+The project root is the nearest directory at or above |:pwd| that contains
+one of `root_markers` (|nitpick-config|), else |:pwd| itself. It decides how
 paths appear in the review (relative to it) and which agent session |:NitTo|
 picks. Files outside of it can be annotated too; you get a warning, and the
 review names them by their absolute path.
@@ -182,8 +184,8 @@ The label tells the agent what you want without rules in the prompt: it is
 part of the comment's text. nitpick shows it as a sign beside the comment,
 highlights it in the comment buffer in the same color and completes it there
 with its 'omnifunc' (|i_CTRL-X_CTRL-O|, or a completion plugin's omni
-source); both come from the "nitpick" ftplugin. `labels` lists the known ones; setting it
-replaces the whole list. The defaults: >lua
+source); both come from the "nitpick" ftplugin. `labels` lists the known
+ones; setting it replaces the whole list. The defaults: >lua
     labels = {
       { name = "praise",     sign = "+", hl = "DiagnosticSignOk" },
       { name = "nitpick",    sign = "~", hl = "NitpickSign" },

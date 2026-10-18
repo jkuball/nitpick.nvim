@@ -13,7 +13,7 @@ M.defaults = {
   signs = {
     enabled = true,
     single = "ŋ",
-    first = "┌",
+    first = "ŋ",
     middle = "│",
     last = "└",
   },

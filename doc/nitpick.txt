@@ -157,7 +157,7 @@ No setup is needed. Options come from `vim.g.nitpick` or from: >lua
       line_key = "b",              -- gb + b: current line
       open_cmd = "botright 10split",
       startinsert = true,
-      signs = { enabled = true, single = "ŋ", first = "┌", middle = "│", last = "└" },
+      signs = { enabled = true, single = "ŋ", first = "ŋ", middle = "│", last = "└" },
       icon = "ŋ",                  -- statusline and window titles
       virt_text = { enabled = true, prefix = "ŋ ", max_width = 60 },
       instructions = "…",          -- opening text of every review

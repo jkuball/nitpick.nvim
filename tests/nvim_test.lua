@@ -202,7 +202,7 @@ it("signs and virtual text", function()
     if m[4].sign_text then signs[m[2] + 1] = vim.trim(m[4].sign_text) end
     if m[4].virt_text then virt = m[4].virt_text[1][1] end
   end
-  eq(signs, { [2] = "┌", [3] = "│", [4] = "└" })
+  eq(signs, { [2] = "ŋ", [3] = "│", [4] = "└" })
   eq(virt, "ŋ a block")
 end)
 
@@ -504,7 +504,7 @@ it("Conventional Comments labels show as signs and complete in :Nit", function()
       if m[4].sign_text then return vim.trim(m[4].sign_text) end
     end
   end
-  eq({ marker(3), marker(5), marker(6), marker(8), marker(10) }, { "ŋ?", "┌>", "└", "ŋ", "ŋ~" })
+  eq({ marker(3), marker(5), marker(6), marker(8), marker(10) }, { "ŋ?", "ŋ>", "└", "ŋ", "ŋ~" })
   -- A label colors every line of its range, not just the first.
   local function color(row)
     for _, m in ipairs(vim.api.nvim_buf_get_extmarks(0, store.ns_deco, { row - 1, 0 }, { row - 1, -1 }, { details = true })) do

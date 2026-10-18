@@ -58,6 +58,7 @@ sections = { lualine_x = { function() return require("nitpick").status() end, "e
 | `:[range]Nit[!] [text]` | Comment on `[range]` (default: current line). With text it is stored directly; without, an ordinary Markdown buffer opens – `:w` saves, `:wq` saves and closes, `:q!` discards, writing it empty deletes the comment. An existing comment on the line/range is edited; `!` forces a new one. In a nitpick list, it edits the entry under the cursor. The first word completes to a label (`question:`). |
 | `:NitNote[!] [text]` | A note on the review as a whole, not on any line. Without text, edit the existing note (or start one); `!` starts a new one. |
 | `:NitFile[!] [text]` | The same for a note on the current file as a whole, shown at the end of its first line. |
+| `:[range]NitEdit[!]` | Edit a comment touching `[range]`, or the one under the cursor; with several, pick one (`!` always picks, among all on the line). |
 | `:[range]NitDelete` | Delete comments touching `[range]` – or, in a nitpick quickfix/location list window, the entries in `[range]`. |
 | `:Nits` | All pending comments in the quickfix list, kept up to date. |
 | `:LNits` | This file's pending comments in the window's location list. |
@@ -80,6 +81,7 @@ map("n", "<leader>nn", "<Plug>(nitpick-annotate-line)")
 map("x", "<leader>nn", "<Plug>(nitpick-annotate)")
 map("n", "<leader>no", "<Plug>(nitpick-note)")
 map("n", "<leader>nf", "<Plug>(nitpick-file)")
+map({ "n", "x" }, "<leader>ne", "<Plug>(nitpick-edit)")
 map({ "n", "x" }, "<leader>nd", "<Plug>(nitpick-delete)")
 map("n", "<leader>nq", "<Plug>(nitpick-qflist)")
 map("n", "<leader>nl", "<Plug>(nitpick-loclist)")

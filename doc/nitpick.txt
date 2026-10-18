@@ -64,6 +64,14 @@ review names them by their absolute path.
     under the file's heading, before its lines. Without [text] and with
     [!], as for |:NitNote|.
 
+:[range]NitEdit[!]                                          *:NitEdit*
+    Edit a comment that touches [range] in a comment buffer, as |:Nit| does.
+    Without a range, the comment under the cursor, the most specific
+    first: one on the text under the cursor, else one on whole lines, else
+    any on the line. With several, pick one; [!] always picks, among all
+    comments on the line or [range]. In a nitpick quickfix or location list
+    window it edits an entry in [range].
+
 :[range]NitDelete                                          *:NitDelete*
     Delete the comments that touch [range]. In a nitpick quickfix or
     location list window it deletes the entries in [range] instead.
@@ -114,6 +122,7 @@ with "gb" ("go bother") as the operator: >lua
     map("x", "<leader>nn", "<Plug>(nitpick-annotate)")
     map("n", "<leader>no", "<Plug>(nitpick-note)")
     map("n", "<leader>nf", "<Plug>(nitpick-file)")
+    map({ "n", "x" }, "<leader>ne", "<Plug>(nitpick-edit)")
     map({ "n", "x" }, "<leader>nd", "<Plug>(nitpick-delete)")
     map("n", "<leader>nq", "<Plug>(nitpick-qflist)")
     map("n", "<leader>nl", "<Plug>(nitpick-loclist)")
@@ -126,6 +135,7 @@ with "gb" ("go bother") as the operator: >lua
   <Plug>(nitpick-annotate-line)  Annotate [count] lines
   <Plug>(nitpick-note)           |:NitNote|
   <Plug>(nitpick-file)           |:NitFile|
+  <Plug>(nitpick-edit)           |:NitEdit| under the cursor or in the selection
   <Plug>(nitpick-delete)         |:NitDelete| on the line or selection
   <Plug>(nitpick-qflist)         |:Nits|
   <Plug>(nitpick-loclist)        |:LNits|

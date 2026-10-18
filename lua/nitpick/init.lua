@@ -332,6 +332,51 @@ function ids_in_range(opts)
   return ids
 end
 
+--- Whether the cursor (1-based line, 0-based byte column) is on the text of a
+--- charwise comment.
+local function on_text(c, line, col)
+  return c.col ~= nil and (line > c.lnum or col >= c.col) and (line < c.end_lnum or col < c.end_col)
+end
+
+--- :[range]NitEdit[!] – edit a comment touching [range]. Without a range, the
+--- one under the cursor: the most specific first – a comment on the text under
+--- the cursor, else on whole lines, else any on the line. With several pick
+--- one; [!] picks among all on the line or range.
+---@param opts { line1: integer, line2: integer, range: integer, bang?: boolean, mods?: string }
+function M.edit(opts)
+  local ids = ids_in_range(opts)
+  if not ids then return end
+  local list = vim.tbl_map(store.get, ids)
+  if opts.range == 0 and not opts.bang and vim.bo.buftype ~= "quickfix" then
+    local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+    for _, keep in ipairs({
+      function(c)
+        return on_text(c, line, col)
+      end,
+      function(c)
+        return c.col == nil
+      end,
+    }) do
+      local narrowed = vim.tbl_filter(keep, list)
+      if #narrowed > 0 then
+        list = narrowed
+        break
+      end
+    end
+  end
+  local buf = vim.api.nvim_get_current_buf()
+  if #list == 1 and not opts.bang then return edit_comment(buf, list[1], opts.mods) end
+  vim.ui.select(list, {
+    prompt = "Edit comment",
+    kind = "nitpick.comment",
+    format_item = function(c)
+      return range_label(c) .. "  " .. vim.split(c.text, "\n", { plain = true })[1]
+    end,
+  }, function(choice)
+    if choice then edit_comment(buf, choice, opts.mods) end
+  end)
+end
+
 ---@param opts { line1: integer, line2: integer }
 function M.delete(opts)
   local ids = ids_in_range(opts)

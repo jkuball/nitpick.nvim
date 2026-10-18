@@ -734,6 +734,46 @@ it(":NitTo attaches to the sole matching session, :NitTo! always asks", function
   stop_other()
 end)
 
+it(":NitEdit edits the comment under the cursor, picking among several", function()
+  vim.cmd("3Nit whole line")
+  store.add(0, 3, 3, "a word", { col = 2, end_col = 4 })
+  store.add(0, 5, 5, "part only", { col = 0, end_col = 4 })
+  local function edited()
+    local text = vim.api.nvim_buf_get_lines(0, 0, -1, false)[1]
+    vim.cmd("quit!")
+    return text
+  end
+  local picked
+  local orig = vim.ui.select
+  vim.ui.select = function(items, opts, cb)
+    picked = vim.tbl_map(opts.format_item, items)
+    cb(items[#items])
+  end
+
+  -- On the word: that comment; elsewhere on the line: the line's own.
+  vim.api.nvim_win_set_cursor(0, { 3, 3 })
+  vim.cmd("NitEdit")
+  eq(edited(), "a word")
+  vim.api.nvim_win_set_cursor(0, { 3, 5 })
+  vim.cmd("NitEdit")
+  eq(edited(), "whole line")
+  eq(picked, nil, "one candidate, no picker")
+  -- A comment on part of a line is found from anywhere on it when alone.
+  vim.api.nvim_win_set_cursor(0, { 5, 6 })
+  vim.cmd("NitEdit")
+  eq(edited(), "part only")
+
+  -- [!] and ranges with several comments pick.
+  vim.api.nvim_win_set_cursor(0, { 3, 3 })
+  vim.cmd("NitEdit!")
+  eq(picked, { "src/app.py:3  whole line", "src/app.py:3:3-3:4  a word" })
+  vim.cmd("quit!")
+  vim.cmd("3,5NitEdit")
+  eq(picked, { "src/app.py:3  whole line", "src/app.py:3:3-3:4  a word", "src/app.py:5:1-5:4  part only" })
+  eq(edited(), "part only")
+  vim.ui.select = orig
+end)
+
 it("status component", function()
   local sessions = require("nitpick.sessions")
   sessions.active, sessions.current = nil, nil

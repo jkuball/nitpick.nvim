@@ -6,7 +6,7 @@ local store = require("nitpick.store")
 local M = {}
 
 local function instructions(root)
-  local custom = vim.fs.joinpath(root, ".pi", "review-prompt.md")
+  local custom = vim.fs.joinpath(root, ".nitpick", "review-prompt.md")
   if vim.uv.fs_stat(custom) then return vim.trim(table.concat(vim.fn.readfile(custom), "\n")) end
   return config.get().instructions
 end

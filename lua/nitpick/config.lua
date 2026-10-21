@@ -23,7 +23,7 @@ M.defaults = {
     max_width = 60,
   },
   -- Opening text of every review. A project can replace it with
-  -- <root>/.pi/review-prompt.md (an empty file omits it).
+  -- <root>/.nitpick/review-prompt.md (an empty file omits it).
   instructions = "My review comments on the code, each with the lines it refers to.",
   -- Conventional Comments labels (conventionalcomments.org) a comment may
   -- start with: "question: why?", "suggestion (non-blocking): …". A label is

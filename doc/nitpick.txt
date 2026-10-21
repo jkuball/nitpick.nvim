@@ -8,6 +8,7 @@ CONTENTS                                                  *nitpick*
   3. Mappings ................................ |nitpick-mappings|
   4. Configuration ........................... |nitpick-config|
   5. How it talks to the agent ............... |nitpick-bridge|
+  6. Integrations ............................ |nitpick-integrations|
 
 ==============================================================================
 1. INTRODUCTION                                           *nitpick-intro*
@@ -15,12 +16,16 @@ CONTENTS                                                  *nitpick*
 Read the code your agent wrote, mark what bothers you, and send it all back
 as one review.
 
-Comments are anchored with extmarks, shown in the sign column and as
-virtual text. Each instance of Neovim has one review, kept in memory for as
-long as it runs. Quitting Neovim drops it, without asking.
+While you read, you comment on lines, ranges or whole files – the nits.
+nitpick shows them beside the code and collects them until you are done;
+then |:NitSend| hands them to your agent session as one message.
 
-Your agent needs nitpick's integration for it (see |nitpick-bridge|); it
-listens in every interactive session.
+Comments are anchored with extmarks, so they follow your edits, and shown in
+the sign column and as virtual text. Each instance of Neovim has one review,
+kept in memory for as long as it runs. Quitting Neovim drops it, without
+asking.
+
+Your agent needs one of nitpick's integrations (|nitpick-integrations|).
 
 The project root is the nearest directory at or above |:pwd| that contains
 one of `root_markers` (|nitpick-config|), else |:pwd| itself. It decides how
@@ -54,9 +59,9 @@ review names them by their absolute path.
 :NitNote[!] [text]                                          *:NitNote*
     A note on the review as a whole, not on any line, such as "let's rethink
     the naming overall". Notes come first in the review, under "General".
-    Without [text], open the existing note in a comment buffer as |:Nit|
-    does – with several, pick one – or start a new one. [!] always starts a
-    new one.
+    Without [text], edit a note in a comment buffer as |:Nit| does: the
+    note if there is one, a picked one if there are several, else a new
+    one. [!] always starts a new one.
 
 :NitFile[!] [text]                                          *:NitFile*
     A note on the current file as a whole, not on any line. It shows as
@@ -93,7 +98,8 @@ review names them by their absolute path.
     for |:NitSend|.
 
 :NitSend [text]                                            *:NitSend*
-    Send all pending comments. [text] is put in front of the review. The
+    Send all pending comments. [text] goes first, before the opening
+    instructions, which stay (|nitpick-config|). The
     agent takes it the most immediate way it has: idle, it starts a turn;
     busy, it takes the review as early as it can (|nitpick-bridge|).
     Comments are only removed once the agent accepted them.
@@ -135,7 +141,7 @@ with "gb" ("go bother") as the operator: >lua
   <Plug>(nitpick-annotate-line)  Annotate [count] lines
   <Plug>(nitpick-note)           |:NitNote|
   <Plug>(nitpick-file)           |:NitFile|
-  <Plug>(nitpick-edit)           |:NitEdit| under the cursor or in the selection
+  <Plug>(nitpick-edit)           |:NitEdit| on the line or selection
   <Plug>(nitpick-delete)         |:NitDelete| on the line or selection
   <Plug>(nitpick-qflist)         |:Nits|
   <Plug>(nitpick-loclist)        |:LNits|
@@ -147,9 +153,9 @@ with "gb" ("go bother") as the operator: >lua
   <Plug>(nitpick-prev)           Previous nit in the buffer
 
 "gbb" annotates the current line, like "gcc": the second "b" is the
-`line_key` option. If you put the operator elsewhere, set `line_key` to its
-last key. Don't end the operator's keys in "a" or "i", which start text
-objects ("ap", "iw").
+`line_key` option (|nitpick-config|). If you put the operator elsewhere, set
+`line_key` to its last key. Don't end the operator's keys in "a" or "i",
+which start text objects ("ap", "iw").
 
 Linewise motions and Visual-line mode comment on whole lines. Charwise ones
 ("gbiw", "v" selections) also remember the exact columns: the text is
@@ -158,8 +164,6 @@ columns 5-9") while still quoting whole lines.
 
 Next/previous take a [count], wrap around, set the ' mark and work in Visual
 and Operator-pending mode. Across files, use |:Nits| and |]q|.
-
-Note: vim-unimpaired uses "]n" and "[n" for conflict markers.
 
 ==============================================================================
 4. CONFIGURATION                                          *nitpick-config*
@@ -172,17 +176,18 @@ No setup is needed. Options come from `vim.g.nitpick` or from: >lua
       signs = { enabled = true, single = "ŋ", first = "ŋ", middle = "│", last = "└" },
       icon = "ŋ",                  -- statusline and window titles
       virt_text = { enabled = true, prefix = "ŋ ", max_width = 60 },
-      instructions = "…",          -- opening text of every review
+      -- The opening text of every review:
+      instructions = "My review comments on the code, each with the lines it refers to.",
       labels = { … },              -- see |nitpick-labels|
-      max_excerpt_lines = 200,
+      max_excerpt_lines = 200,     -- longest code excerpt quoted per comment
       root_markers = { ".git", ".jj", ".hg" },
       socket_dir = nil,            -- see |nitpick-bridge|
-      timeout = 2000,
+      timeout = 2000,              -- ms an agent session has to answer
     })
 <
 
-A project replaces the opening instructions with `.pi/review-prompt.md` in
-its root; an empty file omits them.
+A project replaces the opening instructions with `.nitpick/review-prompt.md`
+in its root; an empty file omits them.
 
                                                           *nitpick-labels*
 A comment may start with a Conventional Comments label
@@ -228,13 +233,7 @@ Each agent session listens on a Unix socket `<pid>.sock` in
 `$NITPICK_DIR`, else `$XDG_RUNTIME_DIR/nitpick`, else
 `$TMPDIR/nitpick-<uid>`. The directory is private (0700). Requests are
 newline-delimited JSON. Neovim formats the review, so |:NitReview| shows
-exactly what the agent receives. In Pi, `/nvim [on|off]` shows or toggles the
-bridge; `NITPICK_AUTOSTART=0` disables the automatic start.
-
-Claude Code (2.1.287 or newer) works the same way through the mod in the
-repository's `integrations/claude/` directory: it starts the same bridge in a
-Node process for each session. |:NitTo| lists such sessions as "claude <tag>",
-and Claude Code shows the tag among the mode labels right of its prompt.
+exactly what the agent receives.
 
 The protocol, version 1, has two requests. Neovim connects, writes one JSON
 line, reads one JSON line back, and the connection closes: >json
@@ -247,9 +246,32 @@ line, reads one JSON line back, and the connection closes: >json
 
     ← {"ok":false,"v":1,"error":"…"}
 <
-Neovim formats the whole review; an agent only delivers `text`. `comments`
-is for the agent's own notification.
+Neovim formats the whole review; an integration only delivers `text` as a
+user message. All of the logic lives in the plugin, which keeps integrations
+as small as they can be.
 
 Run |:checkhealth| nitpick to see the sessions Neovim can reach.
+
+==============================================================================
+6. INTEGRATIONS                                     *nitpick-integrations*
+
+An integration makes an agent session listen for reviews (|nitpick-bridge|)
+and shows the session's tag, as "ŋ nvim a3f9c1", so you can tell sessions
+apart in |:NitTo|. How to install each is in the README.
+
+Pi                                                        *nitpick-pi*
+    An extension. It starts listening with every interactive session;
+    `NITPICK_AUTOSTART=0` leaves that to `/nvim on`. `/nvim [on|off]` shows
+    or toggles it. The tag is in Pi's footer. A review sent while Pi works
+    steers the running turn.
+
+Claude Code                                               *nitpick-claude*
+    A mod, for Claude Code 2.1.287 or newer. Mods cannot open sockets, so
+    it starts a small Node process for each session, which listens for the
+    session's life. The tag is among the mode labels right of the prompt.
+    The review arrives as a prompt in your words; sent while Claude works,
+    it follows once the running turn ends.
+
+Another agent needs the two requests above, nothing more.
 
  vim:tw=78:ts=8:ft=help:norl:

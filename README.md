@@ -91,8 +91,6 @@ map("n", "<leader>nc", "<Plug>(nitpick-clear)")
 map("n", "<leader>nt", "<Plug>(nitpick-to)")
 ```
 
-(vim-unimpaired uses `]n`/`[n` for conflict markers.)
-
 ## Installation
 
 Neovim 0.11 or newer, e.g. with lazy.nvim:

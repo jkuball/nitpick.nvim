@@ -99,7 +99,7 @@ Neovim 0.11 or newer, e.g. with lazy.nvim:
 { "jkuball/nitpick.nvim" }
 ```
 
-With Nix, add the flake and install `packages.<system>.vimPlugin`, e.g. with
+With Nix, add the flake and install `packages.<system>.plugin`, e.g. with
 nixvim:
 
 ```nix
@@ -108,7 +108,7 @@ inputs.nitpick.inputs.nixpkgs.follows = "nixpkgs";
 ```
 
 ```nix
-extraPlugins = [ inputs.nitpick.packages.${pkgs.stdenv.hostPlatform.system}.vimPlugin ];
+extraPlugins = [ inputs.nitpick.packages.${pkgs.stdenv.hostPlatform.system}.plugin ];
 ```
 
 Then install the part for your agent.
@@ -121,12 +121,13 @@ mappings above.
 
 All of nitpick's logic lives in Neovim: it writes the review and hands it over
 a Unix socket. An agent only needs a small integration that receives it and
-delivers it as a user message – each one here is a few hundred lines, and
-updating nitpick never means restarting your agent. Adding another agent means
+delivers it as a user message – it does almost nothing itself, and updating
+nitpick never means restarting your agent. Adding another agent means
 speaking the two-message protocol in `:help nitpick-bridge`.
 
 Each integration shows the session's tag (`ŋ nvim a3f9c1`), so you can tell
-sessions apart in `:NitTo`.
+sessions apart in `:NitTo`. With Nix, the flake has them as packages too:
+`integration-pi` and `integration-claude-code`.
 
 ### Pi
 
@@ -138,8 +139,7 @@ review as a user message. `/nvim [on|off]` shows or toggles it,
 pi install git:github.com/jkuball/nitpick.nvim
 ```
 
-For a single run, `pi -e <checkout>/integrations/pi/index.ts`. With Nix, load
-`"${inputs.nitpick.packages.<system>.piExtension}/index.ts"` as an extension.
+For a single run, `pi -e <checkout>/integrations/pi/index.ts`.
 
 ### Claude Code
 
@@ -153,8 +153,6 @@ a prompt in your own words.
 ```
 
 For a single session, `claude --plugin-dir <checkout>/integrations/claude`.
-With Nix, point `CLAUDE_CODE_PLUGIN_DIRS` at
-`inputs.nitpick.packages.<system>.claudePlugin`, which brings its own Node.
 
 ## Contributing
 

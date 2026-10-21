@@ -4,7 +4,7 @@ let
 in
 {
   perSystem = { pkgs, self', ... }: {
-    packages.vimPlugin = pkgs.vimUtils.buildVimPlugin {
+    packages.plugin = pkgs.vimUtils.buildVimPlugin {
       pname = "nitpick.nvim";
       inherit version;
       src = lib.fileset.toSource {
@@ -25,13 +25,13 @@ in
       };
     };
 
-    packages.default = self'.packages.vimPlugin;
+    packages.default = self'.packages.plugin;
 
-    checks.nvim = pkgs.runCommand "nitpick-nvim-tests"
+    checks.plugin = pkgs.runCommand "nitpick-plugin-tests"
       { nativeBuildInputs = [ pkgs.neovim ]; }
       ''
         export HOME=$TMPDIR
-        NITPICK_PLUGIN=${self'.packages.vimPlugin} \
+        NITPICK_PLUGIN=${self'.packages.plugin} \
           nvim --clean --headless -l ${root + "/tests/nvim_test.lua"}
         touch $out
       '';

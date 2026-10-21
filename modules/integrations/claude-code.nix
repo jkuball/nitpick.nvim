@@ -6,7 +6,7 @@ let
 in
 {
   perSystem = { pkgs, self', ... }: {
-    packages.claudePlugin = pkgs.runCommand "nitpick-claude-plugin-${version}" { } ''
+    packages.integration-claude-code = pkgs.runCommand "nitpick-integration-claude-code-${version}" { } ''
       mkdir -p $out/.claude-plugin $out/hooks $out/bin
       cp ${claude + "/.claude-plugin/plugin.json"} $out/.claude-plugin/plugin.json
       cp ${claude + "/hooks/hooks.json"} $out/hooks/hooks.json
@@ -20,14 +20,14 @@ in
     '';
 
     # Claude Code reads the version from plugin.json itself, so it has to match.
-    checks.claudeVersion = pkgs.runCommand "nitpick-claude-version" { } (
+    checks.integration-claude-code-version = pkgs.runCommand "nitpick-integration-claude-code-version" { } (
       if manifest.version == version then "touch $out"
       else "echo 'integrations/claude/.claude-plugin/plugin.json has version ${manifest.version}, the flake ${version}' >&2; exit 1"
     );
 
     # The packaged bridge, started through the plugin's own entry point.
-    checks.claude = pkgs.runCommand "nitpick-claude-tests" { nativeBuildInputs = [ pkgs.nodejs_24 ]; } ''
-      NITPICK_CLAUDE_PLUGIN=${self'.packages.claudePlugin} node --test ${claude + "/bridge-helper.spec.ts"}
+    checks.integration-claude-code = pkgs.runCommand "nitpick-integration-claude-code-tests" { nativeBuildInputs = [ pkgs.nodejs_24 ]; } ''
+      NITPICK_CLAUDE_PLUGIN=${self'.packages.integration-claude-code} node --test ${claude + "/bridge-helper.spec.ts"}
       touch $out
     '';
   };

@@ -1,10 +1,20 @@
 name: CI
 
 on:
+  pull_request:
   push:
     branches: [main]
-  pull_request:
   workflow_dispatch:
+    inputs:
+      candidate:
+        type: string
+
+permissions:
+  actions: write
+  contents: write
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && github.ref || 'presswerk-release' }}
 
 jobs:
   build:
@@ -18,6 +28,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.candidate || github.sha }}
       - uses: DeterminateSystems/determinate-nix-action@v3
       - uses: cachix/cachix-action@v17
         with:
@@ -29,3 +41,36 @@ jobs:
           --flake ".#" --select 'flake: { inherit (flake) packages checks; }'
           --no-nom --skip-cached
           ${{ secrets.CACHIX_AUTH_TOKEN != '' && '--cachix-cache jkuball' || '' }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.candidate || github.sha }}
+      - uses: DeterminateSystems/determinate-nix-action@v3
+      - run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - name: Plan release
+        if: github.event_name == 'pull_request'
+        run: |
+          set -o pipefail
+          nix run --inputs-from . presswerk -- plan | tee "$RUNNER_TEMP/plan.txt"
+          { echo '```text'; cat "$RUNNER_TEMP/plan.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Prepare release
+        if: github.event_name == 'push'
+        run: |
+          nix run --inputs-from . presswerk -- prepare
+          if test "$(git rev-parse HEAD)" != "$GITHUB_SHA"; then
+            git push origin HEAD:main
+            gh workflow run ci.yml --ref main -f candidate="$(git rev-parse HEAD)"
+          fi
+      - name: Publish release
+        if: inputs.candidate
+        run: nix run --inputs-from . presswerk -- publish HEAD

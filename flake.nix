@@ -11,23 +11,36 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
     import-tree.url = "github:denful/import-tree";
+    presswerk.url = "github:jkuball/presswerk/v0.5.0";
   };
 
-  outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } ({ lib, ... }: {
+  outputs = inputs@{ self, ... }: inputs.flake-parts.lib.mkFlake { inherit inputs; } ({ lib, ... }: {
     options.root = lib.mkOption {
       type = lib.types.path;
       default = ./.;
       readOnly = true;
     };
 
-    options.version = lib.mkOption {
-      type = lib.types.str;
-      default = "0.1.0";
-      readOnly = true;
-    };
-
     imports = [ (inputs.import-tree ./modules) ];
 
-    config.systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
+    config = {
+      systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
+
+      flake.presswerk.default = inputs.presswerk.lib.mkRelease {
+        sourceRoot = self.outPath;
+        versionFiles.json = {
+          package = {
+            path = "package.json";
+            key = "version";
+          };
+          claude-plugin = {
+            path = "integrations/claude/.claude-plugin/plugin.json";
+            key = "version";
+          };
+        };
+        versionFiles.badge.default = { };
+        publishers.github-release.default.repository = "jkuball/nitpick.nvim";
+      };
+    };
   });
 }

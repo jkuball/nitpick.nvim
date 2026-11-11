@@ -63,6 +63,11 @@ jobs:
           token: ${{ steps.app.outputs.token || github.token }}
 
       - uses: DeterminateSystems/determinate-nix-action@v3
+      - uses: cachix/cachix-action@v17
+        with:
+          name: jkuball
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          skipPush: true
 
       - name: Plan release
         if: github.event_name == 'pull_request'

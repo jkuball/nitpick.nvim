@@ -1,6 +1,7 @@
 { config, lib, ... }:
 let
-  inherit (config) root version;
+  inherit (config) root;
+  version = config.flake.presswerk.default.version;
 in
 {
   perSystem = { pkgs, self', ... }: {

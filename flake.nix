@@ -21,12 +21,6 @@
       readOnly = true;
     };
 
-    options.version = lib.mkOption {
-      type = lib.types.str;
-      default = (builtins.fromJSON (builtins.readFile ./package.json)).version;
-      readOnly = true;
-    };
-
     imports = [ (inputs.import-tree ./modules) ];
 
     config = {
@@ -44,6 +38,7 @@
             key = "version";
           };
         };
+        versionFiles.badge.default = { };
         publishers.github-release.default.repository = "jkuball/nitpick.nvim";
       };
     };

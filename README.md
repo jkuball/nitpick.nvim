@@ -7,6 +7,16 @@
 
 <p align="center"><em>The agent codes. You nitpick it directly from Neovim.</em></p>
 
+<p align="center">
+  <a href="https://presswerk.dev/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://presswerk.dev/badge-light.svg">
+      <img alt="Released with Presswerk" src="https://presswerk.dev/badge.svg" width="164" height="20">
+    </picture>
+  </a>
+  <img alt="Version" src=".github/presswerk-badge.svg" height="20">
+</p>
+
 Read the code your agent wrote, mark what bothers you, and send it all back as
 one review.
 

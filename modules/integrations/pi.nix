@@ -1,7 +1,7 @@
 { config, ... }:
 let
   inherit (config) root;
-  version = config.flake.presswerk.default.version;
+  inherit (config.flake.presswerk.default) version;
   pi = root + "/integrations/pi";
 in
 {

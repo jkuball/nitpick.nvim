@@ -1,7 +1,7 @@
 { config, lib, ... }:
 let
   inherit (config) root;
-  version = config.flake.presswerk.default.version;
+  inherit (config.flake.presswerk.default) version;
   claude = root + "/integrations/claude";
   manifest = lib.importJSON (claude + "/.claude-plugin/plugin.json");
 in

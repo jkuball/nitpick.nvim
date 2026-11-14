@@ -234,16 +234,16 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1794410235,
-        "narHash": "sha256-uwq7qfResWpZzspWlkMNbpmW+v1pNpf+bvVHafHnxtU=",
+        "lastModified": 1794621591,
+        "narHash": "sha256-CSQDe8uLJfc2k0B7oT/+wYHr59WYcm6TV7VzAqTfJ2w=",
         "owner": "jkuball",
         "repo": "presswerk",
-        "rev": "e15e6475847874a0e7e62b50a2fc98988cd6cebb",
+        "rev": "ca2b4d4327ee358a729f87709a24deaa75745718",
         "type": "github"
       },
       "original": {
         "owner": "jkuball",
-        "ref": "v0.5.0",
+        "ref": "v0.8.0",
         "repo": "presswerk",
         "type": "github"
       }

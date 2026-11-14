@@ -11,7 +11,7 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
     import-tree.url = "github:denful/import-tree";
-    presswerk.url = "github:jkuball/presswerk/v0.5.0";
+    presswerk.url = "github:jkuball/presswerk/v0.8.0";
   };
 
   outputs = inputs@{ self, ... }: inputs.flake-parts.lib.mkFlake { inherit inputs; } ({ lib, ... }: {
@@ -28,6 +28,7 @@
 
       flake.presswerk.default = inputs.presswerk.lib.mkRelease {
         sourceRoot = self.outPath;
+        analyzer.gitmoji.enable = true;
         versionFiles.json = {
           package = {
             path = "package.json";

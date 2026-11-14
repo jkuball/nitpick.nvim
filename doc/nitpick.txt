@@ -95,14 +95,16 @@ review names them by their absolute path.
     the buffer (|:wq|, |:x|, |ZZ|) sends what you saved last. |:q!| before
     saving cancels; to cancel after saving, empty the buffer and |:wq|. If
     sending fails, the buffer opens again with your text. [text] works as
-    for |:NitSend|.
+    for |:NitSend|. In a Neovim started by `/nit`, closing the buffer
+    finishes the review and quits instead (|nitpick-nit|).
 
 :NitSend [text]                                            *:NitSend*
     Send all pending comments. [text] goes first, before the opening
     instructions, which stay (|nitpick-config|). The
     agent takes it the most immediate way it has: idle, it starts a turn;
     busy, it takes the review as early as it can (|nitpick-bridge|).
-    Comments are only removed once the agent accepted them.
+    Comments are only removed once the agent accepted them. Not available
+    in a Neovim started by `/nit`, which sends on quit (|nitpick-nit|).
 
 :NitClear[!]                                               *:NitClear*
     Delete all pending comments after confirmation ([!] skips it).
@@ -113,7 +115,8 @@ review names them by their absolute path.
     running sessions with |vim.ui.select()|, those of this project first.
     Each entry shows the agent, the session's tag – which the agent shows
     too, as "ŋ nvim a3f9c1" – its title and its directory. Before you
-    attach, |:NitSend| does the same as |:NitTo|.
+    attach, |:NitSend| does the same as |:NitTo|. Not available in a Neovim
+    started by `/nit` (|nitpick-nit|).
 
 ==============================================================================
 3. MAPPINGS                                               *nitpick-mappings*
@@ -264,6 +267,25 @@ Pi                                                        *nitpick-pi*
     `NITPICK_AUTOSTART=0` leaves that to `/nvim on`. `/nvim [on|off]` shows
     or toggles it. The tag is in Pi's footer. A review sent while Pi works
     steers the running turn.
+
+/nit [args]                                               *nitpick-nit*
+    Review without a second terminal: Pi steps aside, as for its external
+    editor, and starts Neovim right there. Comment as usual; quitting
+    (|:qa|, |:wqa|) sends the review. Quit with |:cq| to discard it.
+    Without comments, nothing is sent. Closing the |:NitReview| buffer
+    finishes the review and quits Neovim; if unsaved buffers keep it open,
+    the edited text is sent when you quit, unless you change the comments
+    first. There is no session to pick or send to, so |:NitTo| and
+    |:NitSend| are not available; the statusline component (|nitpick-config|) shows
+    "→ /nit". Pi waits while Neovim runs.
+
+    [args] are passed to Neovim through `/bin/sh`, so `~` and globs work:
+    `/nit ~/notes/plan.md`. The Neovim is the first of `$NITPICK_NVIM`,
+    Pi's `externalEditor` setting, `$VISUAL` and `$EDITOR` that is set,
+    else `nvim`; nitpick must be installed in it. Pi passes the file the
+    review goes to as `--cmd 'lua vim.g.nitpick_output = "…"'`, which
+    nothing started from that Neovim inherits. The `/nvim` bridge need
+    not run.
 
 Claude Code                                               *nitpick-claude*
     A mod, for Claude Code 2.1.287 or newer. Mods cannot open sockets, so

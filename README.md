@@ -153,6 +153,11 @@ pi install git:github.com/jkuball/nitpick.nvim
 
 For a single run, `pi -e <checkout>/integrations/pi/index.ts`.
 
+No second terminal at hand? `/nit [files]` starts Neovim right inside Pi and
+sends the review when you quit; `:cq` discards it. It starts the first of
+`$NITPICK_NVIM`, Pi's `externalEditor`, `$VISUAL` and `$EDITOR`, else `nvim`
+(see `:help nitpick-nit`).
+
 ### Claude Code
 
 A [mod](https://code.claude.com/docs/en/plugins/mods/overview), for Claude

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.0] - 2026-11-14
+
+### 📝 Add or update documentation
+
+- Describe releasing with Presswerk in CONTRIBUTING
+- Say plainly that /nit works without the bridge
+- Lead /nit's help with quitting to send
+- Document /nit and discarding with :cq
+- Sell in-memory reviews as a stateless feature
+- minor restructuring of the readme
+- Keep the badge link on one line
+
+### ✨ Introduce new features
+
+- Review in a Neovim started inside Pi with /nit
+- Write the review to a file on quit when an agent started Neovim
+
+### ♻️ Refactor code
+
+- Run /nit's Neovim in Pi's own shell
+
 ## [0.1.0] - 2026-11-11
 
 ### ✨ Introduce new features

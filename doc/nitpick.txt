@@ -270,14 +270,15 @@ Pi                                                        *nitpick-pi*
 
 /nit [args]                                               *nitpick-nit*
     Review without a second terminal: Pi steps aside, as for its external
-    editor, and starts Neovim right there. Comment as usual; quitting
-    (|:qa|, |:wqa|) sends the review. Quit with |:cq| to discard it.
-    Without comments, nothing is sent. Closing the |:NitReview| buffer
-    finishes the review and quits Neovim; if unsaved buffers keep it open,
-    the edited text is sent when you quit, unless you change the comments
-    first. There is no session to pick or send to, so |:NitTo| and
-    |:NitSend| are not available; the statusline component (|nitpick-config|) shows
-    "→ /nit". Pi waits while Neovim runs.
+    editor, and starts Neovim right there. Comment as usual, then quit
+    Neovim (|:qa|, |ZZ|, …): that sends the review. |:cq| discards it;
+    without comments, nothing is sent. Pi waits while Neovim runs.
+
+    To edit the message first, use |:NitReview|; closing it quits Neovim
+    too. If unsaved buffers keep Neovim open, the edited text is sent when
+    you quit, unless you change the comments before. There is no session
+    to pick or send to, so |:NitTo| and |:NitSend| are not available; the
+    statusline component (|nitpick-config|) shows "→ /nit".
 
     [args] are passed to Neovim through `/bin/sh`, so `~` and globs work:
     `/nit ~/notes/plan.md`. The Neovim is the first of `$NITPICK_NVIM`,

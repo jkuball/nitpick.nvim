@@ -286,8 +286,8 @@ Pi                                                        *nitpick-pi*
     Pi's `externalEditor` setting, `$VISUAL` and `$EDITOR` that is set,
     else `nvim`; nitpick must be installed in it. Pi passes the file the
     review goes to as `--cmd 'lua vim.g.nitpick_output = "…"'`, which
-    nothing started from that Neovim inherits. The `/nvim` bridge need
-    not run.
+    nothing started from that Neovim inherits. `/nit` works without the
+    `/nvim` bridge.
 
 Claude Code                                               *nitpick-claude*
     A mod, for Claude Code 2.1.287 or newer. Mods cannot open sockets, so

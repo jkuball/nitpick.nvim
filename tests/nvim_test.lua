@@ -787,6 +787,100 @@ it("status component", function()
   eq(pc.status(), "ŋ → Fix the parser")
 end)
 
+-- A child Neovim the way Pi's /nit starts one; returns its exit code and the
+-- review file (nil when it was never written).
+local function nit(cmds)
+  local out = tmp .. "/nit-" .. vim.uv.hrtime() .. ".md"
+  local argv = {
+    vim.v.progpath, "--clean", "--headless",
+    "--cmd", "set rtp^=" .. vim.fn.fnameescape(plugin),
+    "--cmd", ("lua vim.g.nitpick_output = %q"):format(out),
+    -- --clean loads no plugins on its own; an nvim that bundles nitpick has
+    -- loaded its own copy, without the output path.
+    "-c", "unlet! g:loaded_nitpick | runtime plugin/nitpick.lua",
+    "-c", "lua require('nitpick').setup({ startinsert = false, open_cmd = 'split' })",
+    "-c", "edit src/app.py",
+  }
+  for _, c in ipairs(cmds) do
+    vim.list_extend(argv, { "-c", c })
+  end
+  local res = vim.system(argv, { cwd = project }):wait(5000)
+  local text = vim.uv.fs_stat(out) and table.concat(vim.fn.readfile(out, "b"), "\n") or nil
+  return res.code, text
+end
+
+it("/nit: the review is written on quit, empty without comments", function()
+  local code, text = nit({ "2Nit looks off", "qa" })
+  eq(code, 0)
+  assert(text:find("## `src/app.py`, line 2", 1, true), text)
+  assert(text:find("looks off", 1, true), text)
+
+  code, text = nit({ "qa" })
+  eq({ code, text }, { 0, "" })
+
+  -- :cq is how you discard: the agent only looks at the exit code.
+  code = nit({ "2Nit never mind", "cq" })
+  assert(code ~= 0, "exit code " .. code)
+end)
+
+it("/nit: closing the review buffer finishes the review and quits", function()
+  local code, text = nit({
+    "2Nit looks off",
+    "NitReview",
+    "%delete",
+    "call setline(1, 'Edited by hand.')",
+    "wq",
+    -- Not reached when the review buffer quits Neovim.
+    "sleep 3",
+    "cq",
+  })
+  eq({ code, text }, { 0, "Edited by hand." })
+end)
+
+it("/nit: no sessions, unsaved buffers keep it open, changes drop the edit", function()
+  local oneshot = require("nitpick.oneshot")
+  local sessions = require("nitpick.sessions")
+  local stop = fake_pi({ pid = 9 })
+  received = {}
+  local messages = {}
+  local orig = vim.notify
+  vim.notify = function(msg)
+    table.insert(messages, msg)
+  end
+  vim.g.nitpick_output = tmp .. "/unused.md"
+  oneshot.setup(function(msg)
+    vim.notify(msg)
+  end)
+  local ok, err = pcall(function()
+    sessions.active, sessions.current = nil, nil
+    vim.cmd("2Nit x")
+    eq(pc.status(), "ŋ 1 → /nit")
+    vim.cmd("NitSend")
+    vim.cmd("NitTo")
+    vim.wait(200)
+    eq(#received, 0, "nothing sent")
+    eq(sessions.active, nil, "not attached")
+    eq(#store.list(), 1, "comments kept")
+
+    -- An unsaved buffer stops :qa; the edited review waits for the quit.
+    vim.bo.modified = true
+    oneshot.finish("final words", vim.notify)
+    eq(oneshot.text(), "final words")
+    assert(messages[#messages]:find(":qa", 1, true), messages[#messages])
+
+    -- Changing the comments afterwards drops it.
+    vim.cmd("3Nit y")
+    eq(oneshot.final, nil)
+    assert(oneshot.text():find("## `src/app.py`, line 3", 1, true))
+  end)
+  vim.notify = orig
+  vim.g.nitpick_output = nil
+  oneshot.final = nil
+  vim.bo.modified = false
+  stop()
+  assert(ok, err)
+end)
+
 print(("\n%d/%d passed"):format(total - failures, total))
 vim.fn.delete(tmp, "rf")
 os.exit(failures == 0 and 0 or 1)

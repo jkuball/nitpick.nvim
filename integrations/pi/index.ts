@@ -3,13 +3,23 @@
 // Every interactive Pi session listens on a Unix socket; the Neovim plugin
 // discovers it, formats the review, and asks this extension to deliver it as
 // a user message. Set NITPICK_AUTOSTART=0 to start the bridge only via /nvim.
+// /nit starts a Neovim in this terminal instead, and sends what it leaves.
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Bridge, shortId } from "./bridge.ts";
+import { editorCommand, piShell, runNit } from "./nit.ts";
 
 export default function (pi: ExtensionAPI) {
   let ctx: ExtensionContext | undefined;
   let bridge: Bridge | undefined;
+
+  // Idle, a review starts a turn; during one, it steers that turn.
+  const deliver = (context: ExtensionContext, text: string, comments?: number) => {
+    if (context.isIdle()) pi.sendUserMessage(text);
+    else pi.sendUserMessage(text, { deliverAs: "steer" });
+    const what = comments === undefined ? "Review" : `Review with ${comments} comment(s)`;
+    context.ui.notify(`${what} received from Neovim`, "info");
+  };
 
   const ensureBridge = async () => {
     bridge ??= new Bridge({
@@ -21,14 +31,7 @@ export default function (pi: ExtensionAPI) {
         cwd: ctx!.cwd,
         idle: ctx!.isIdle(),
       }),
-      // Idle, the review starts a turn; during one, it steers that turn.
-      deliver: (text, meta) => {
-        const idle = ctx!.isIdle();
-        if (idle) pi.sendUserMessage(text);
-        else pi.sendUserMessage(text, { deliverAs: "steer" });
-        const what = meta.comments === undefined ? "Review" : `Review with ${meta.comments} comment(s)`;
-        ctx!.ui.notify(`${what} received from Neovim`, "info");
-      },
+      deliver: (text, meta) => deliver(ctx!, text, meta.comments),
     });
     await bridge.start();
     showStatus();
@@ -79,6 +82,30 @@ export default function (pi: ExtensionAPI) {
         bridge?.listening ? `nitpick bridge listening on ${bridge.path}` : "nitpick bridge is off",
         "info",
       );
+    },
+  });
+
+  pi.registerCommand("nit", {
+    description: "Review in Neovim here; quitting sends the review, :cq discards it",
+    handler: async (args, context) => {
+      ctx = context;
+      if (context.mode !== "tui") {
+        context.ui.notify("/nit needs Pi's terminal UI", "warning");
+        return;
+      }
+      const settings = pi.getSettings();
+      let shell;
+      try {
+        shell = await piShell(settings.shellPath);
+      } catch (error) {
+        context.ui.notify(`nitpick: ${String(error)}`, "error");
+        return;
+      }
+      const result = await runNit(context.ui, shell, editorCommand(process.env, settings), args.trim());
+      if (result.kind === "send") deliver(context, result.text);
+      else if (result.kind === "empty") context.ui.notify("No comments, nothing sent", "info");
+      else if (result.kind === "discard") context.ui.notify(`Review discarded (Neovim exited with ${result.code ?? "a signal"})`, "info");
+      else context.ui.notify("Neovim left no review: is nitpick.nvim installed in it? (NITPICK_NVIM picks the Neovim)", "error");
     },
   });
 }

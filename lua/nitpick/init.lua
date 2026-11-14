@@ -3,6 +3,7 @@
 
 local config = require("nitpick.config")
 local editor = require("nitpick.editor")
+local oneshot = require("nitpick.oneshot")
 local review = require("nitpick.review")
 local sessions = require("nitpick.sessions")
 local store = require("nitpick.store")
@@ -474,8 +475,17 @@ local function ids_of(list)
   end, list)
 end
 
+--- In one-shot mode (Pi's /nit) the agent takes the review on exit; there is
+--- no session to attach to or send to.
+local function oneshot_refuses(what)
+  if not oneshot.active() then return false end
+  notify(what .. " is not available in /nit; quit to hand the review over (:cq discards it)", vim.log.levels.WARN)
+  return true
+end
+
 function M.submit(opts)
   opts = opts or {}
+  if oneshot_refuses(":NitSend") then return end
   local list = pending_or_warn()
   if #list == 0 then return end
   M.send(review.format(list, { preamble = opts.args }), ids_of(list), {})
@@ -490,7 +500,12 @@ local function open_review(ids, lines, mods)
   local written
   local buf = editor.open({
     name = REVIEW_BUF,
-    title = ("%s review: %d comment%s   :wq send · :q! cancel"):format(config.get().icon, #ids, #ids == 1 and "" or "s"),
+    title = ("%s review: %d comment%s   :wq %s · :q! cancel"):format(
+      config.get().icon,
+      #ids,
+      #ids == 1 and "" or "s",
+      oneshot.active() and "finish" or "send"
+    ),
     lines = lines,
     mods = mods,
     on_write = function(buf_lines)
@@ -506,6 +521,7 @@ local function open_review(ids, lines, mods)
       if written == nil then return notify("review not sent") end
       if written == "" then return notify("empty review not sent", vim.log.levels.WARN) end
       local text = written
+      if oneshot.active() then return oneshot.finish(text, notify) end
       M.send(text, ids, {
         on_done = function(ok)
           -- Nothing is lost: the text comes back for another try.
@@ -537,9 +553,15 @@ end
 
 --- :NitTo[!] – attach to the sole session of this project, else (or with !) pick one.
 function M.pick(opts)
+  if oneshot_refuses(":NitTo") then return end
   sessions.pick(store.root(), function(session)
     if session then notify("attached to " .. sessions.label(session)) end
   end, { force = opts and opts.bang })
+end
+
+--- Called at startup when an agent started this Neovim for /nit.
+function M.start_oneshot()
+  oneshot.setup(notify)
 end
 
 --- Statusline component: "ŋ 3 → a3f9c1" (pending comments, attached session).
@@ -549,11 +571,11 @@ function M.status()
     return #store.list()
   end)
   n = ok and n or 0
-  local session = sessions.current
-  if n == 0 and not session then return "" end
+  local target = oneshot.active() and "/nit" or (sessions.current and sessions.name(sessions.current))
+  if n == 0 and not target then return "" end
   local parts = { config.get().icon }
   if n > 0 then table.insert(parts, tostring(n)) end
-  if session then table.insert(parts, "→ " .. sessions.name(session)) end
+  if target then table.insert(parts, "→ " .. target) end
   return table.concat(parts, " ")
 end
 

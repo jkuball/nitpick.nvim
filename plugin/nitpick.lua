@@ -120,3 +120,6 @@ vim.api.nvim_create_autocmd("DirChanged", {
     store().forget_root()
   end,
 })
+
+-- Started by an agent's /nit: the review goes to a file on exit (:help nitpick-nit).
+if require("nitpick.oneshot").active() then pc().start_oneshot() end

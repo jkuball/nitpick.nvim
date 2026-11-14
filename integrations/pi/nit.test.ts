@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { commandLine, editorCommand, outcome } from "./nit.ts";
+import { commandLine, editorCommand, outcome, piShell } from "./nit.ts";
 
 test("the Neovim comes from NITPICK_NVIM, Pi's externalEditor, VISUAL, EDITOR, else nvim", () => {
   const all = { NITPICK_NVIM: "nn", VISUAL: "vi", EDITOR: "ed" };
@@ -26,4 +26,8 @@ test("the exit code and the review file decide what happens", () => {
   // :cq discards, whatever was written.
   assert.deepEqual(outcome(1, "## review\n"), { kind: "discard", code: 1 });
   assert.deepEqual(outcome(null, undefined), { kind: "discard", code: null });
+});
+
+test("outside Pi, the shell is sh, Pi's own last resort", async () => {
+  assert.deepEqual(await piShell(undefined), { shell: "sh", args: ["-c"] });
 });

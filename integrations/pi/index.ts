@@ -7,7 +7,7 @@
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Bridge, shortId } from "./bridge.ts";
-import { editorCommand, runNit } from "./nit.ts";
+import { editorCommand, piShell, runNit } from "./nit.ts";
 
 export default function (pi: ExtensionAPI) {
   let ctx: ExtensionContext | undefined;
@@ -93,7 +93,15 @@ export default function (pi: ExtensionAPI) {
         context.ui.notify("/nit needs Pi's terminal UI", "warning");
         return;
       }
-      const result = await runNit(context.ui, editorCommand(process.env, pi.getSettings()), args.trim());
+      const settings = pi.getSettings();
+      let shell;
+      try {
+        shell = await piShell(settings.shellPath);
+      } catch (error) {
+        context.ui.notify(`nitpick: ${String(error)}`, "error");
+        return;
+      }
+      const result = await runNit(context.ui, shell, editorCommand(process.env, settings), args.trim());
       if (result.kind === "send") deliver(context, result.text);
       else if (result.kind === "empty") context.ui.notify("No comments, nothing sent", "info");
       else if (result.kind === "discard") context.ui.notify(`Review discarded (Neovim exited with ${result.code ?? "a signal"})`, "info");

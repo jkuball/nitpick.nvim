@@ -280,7 +280,8 @@ Pi                                                        *nitpick-pi*
     to pick or send to, so |:NitTo| and |:NitSend| are not available; the
     statusline component (|nitpick-config|) shows "→ /nit".
 
-    [args] are passed to Neovim through `/bin/sh`, so `~` and globs work:
+    [args] are passed to Neovim through Pi's shell (its `shellPath`
+    setting, as for the bash tool), so `~` and globs work:
     `/nit ~/notes/plan.md`. The Neovim is the first of `$NITPICK_NVIM`,
     Pi's `externalEditor` setting, `$VISUAL` and `$EDITOR` that is set,
     else `nvim`; nitpick must be installed in it. Pi passes the file the

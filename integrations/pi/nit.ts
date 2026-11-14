@@ -41,20 +41,35 @@ export function outcome(code: number | null, text: string | undefined): Outcome 
   return { kind: "send", text };
 }
 
+export type Shell = { shell: string; args: string[] };
+
+/** The shell Pi runs its bash tool in (its `shellPath` setting, else bash, else sh). */
+export async function piShell(shellPath: string | undefined): Promise<Shell> {
+  let getShellConfig: ((path?: string) => Shell) | undefined;
+  try {
+    ({ getShellConfig } = await import("@earendil-works/pi-coding-agent"));
+  } catch {
+    // Not inside Pi (the tests) or a Pi without it: Pi's own last resort.
+  }
+  if (!getShellConfig) return { shell: "sh", args: ["-c"] };
+  const { shell, args } = getShellConfig(shellPath);
+  return { shell, args };
+}
+
 type Terminal = { stop(): void; start(): void; requestRender(force?: boolean): void };
 type Ui = {
   custom<T>(factory: (tui: Terminal, theme: unknown, keybindings: unknown, done: (result: T) => void) => unknown): Promise<T>;
 };
 
 /** Run Neovim in the foreground and return what it left behind. Blocks Pi meanwhile, like Ctrl+G. */
-export async function runNit(ui: Ui, editor: string, args: string): Promise<Outcome> {
+export async function runNit(ui: Ui, shell: Shell, editor: string, args: string): Promise<Outcome> {
   const dir = mkdtempSync(join(tmpdir(), "nitpick-"));
   const output = join(dir, "review.md");
   try {
     const code = await ui.custom<number | null>((tui, _theme, _keybindings, done) => {
       tui.stop();
       process.stdout.write("\x1b[2J\x1b[H");
-      const result = spawnSync("/bin/sh", ["-c", commandLine(editor, output, args)], { stdio: "inherit" });
+      const result = spawnSync(shell.shell, [...shell.args, commandLine(editor, output, args)], { stdio: "inherit" });
       tui.start();
       tui.requestRender(true);
       done(result.status);

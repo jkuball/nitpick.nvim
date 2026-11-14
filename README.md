@@ -39,10 +39,6 @@ gbap                                   " the operator ("go bother"): a paragraph
 :NitSend Please keep it short.         " send, with a leading message
 ```
 
-> [!WARNING]
-> Reviews live only in memory and are lost when Neovim exits. Send yours before
-> you `:qa`.
-
 ## Installation
 
 Neovim 0.11 or newer, e.g. with lazy.nvim:
@@ -81,6 +77,8 @@ Then install the part for your agent.
   buffer; edit it and `:wq` sends it, like a `git commit` message.
 - **Any file.** Files outside the project can be annotated too; the review
   names them by absolute path.
+- **Stateless.** A review lives only in memory: no files in your repository,
+  nothing to clean up, nothing going stale. Just send it before you `:qa`.
 
 ### Statusline
 

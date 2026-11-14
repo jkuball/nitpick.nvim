@@ -15,6 +15,17 @@
 Read the code your agent wrote, mark what bothers you, and send it all back as
 one review.
 
+## Quick start
+
+> [!TIP]
+> **Try it now** without changing your config:
+>
+> ```sh
+> nix run github:jkuball/nitpick.nvim
+> ```
+>
+> To send a review, install one of the [agent integrations](#integrations).
+
 Comments are made the way you edit text in Vim: an operator, an Ex command
 with a range, an ordinary buffer.
 
@@ -27,6 +38,32 @@ gbap                                   " the operator ("go bother"): a paragraph
 :Nits                                  " everything pending, in the quickfix list
 :NitSend Please keep it short.         " send, with a leading message
 ```
+
+> [!WARNING]
+> Reviews live only in memory and are lost when Neovim exits. Send yours before
+> you `:qa`.
+
+## Installation
+
+Neovim 0.11 or newer, e.g. with lazy.nvim:
+
+```lua
+{ "jkuball/nitpick.nvim" }
+```
+
+With Nix, add the flake and install `packages.<system>.plugin`, e.g. with
+nixvim:
+
+```nix
+inputs.nitpick.url = "github:jkuball/nitpick.nvim";
+inputs.nitpick.inputs.nixpkgs.follows = "nixpkgs";
+```
+
+```nix
+extraPlugins = [ inputs.nitpick.packages.${pkgs.stdenv.hostPlatform.system}.plugin ];
+```
+
+Then install the part for your agent.
 
 ## Features
 
@@ -44,8 +81,6 @@ gbap                                   " the operator ("go bother"): a paragraph
   buffer; edit it and `:wq` sends it, like a `git commit` message.
 - **Any file.** Files outside the project can be annotated too; the review
   names them by absolute path.
-- **One review per Neovim**, kept in memory while it runs. Quitting Neovim
-  drops it without asking, so send before you `:qa`.
 
 ### Statusline
 
@@ -95,32 +130,6 @@ map("n", "<leader>ns", "<Plug>(nitpick-send)")
 map("n", "<leader>nc", "<Plug>(nitpick-clear)")
 map("n", "<leader>nt", "<Plug>(nitpick-to)")
 ```
-
-## Installation
-
-Neovim 0.11 or newer, e.g. with lazy.nvim:
-
-```lua
-{ "jkuball/nitpick.nvim" }
-```
-
-With Nix, add the flake and install `packages.<system>.plugin`, e.g. with
-nixvim:
-
-```nix
-inputs.nitpick.url = "github:jkuball/nitpick.nvim";
-inputs.nitpick.inputs.nixpkgs.follows = "nixpkgs";
-```
-
-```nix
-extraPlugins = [ inputs.nitpick.packages.${pkgs.stdenv.hostPlatform.system}.plugin ];
-```
-
-Then install the part for your agent.
-
-To try it first, without touching your config: `nix run
-github:jkuball/nitpick.nvim` starts a plain Neovim with nitpick and the
-mappings above.
 
 ## Integrations
 

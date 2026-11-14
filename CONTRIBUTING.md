@@ -36,6 +36,10 @@ claude plugin test integrations/claude
 
 ## Versions
 
-The version lives in `flake.nix` (`options.version`). Claude Code reads its
-own from `integrations/claude/.claude-plugin/plugin.json`, so bump both;
-`nix flake check` fails while they differ.
+[Presswerk](https://presswerk.dev/) releases nitpick from the Gitmoji commits
+on `main`: it picks the next version, writes it to the version files declared
+in `flake.nix` (`package.json` and
+`integrations/claude/.claude-plugin/plugin.json`) and adds the release's
+section to `CHANGELOG.md`, all in the release commit. Don't bump versions or
+edit `CHANGELOG.md` by hand; your commit subjects become its entries.
+`nix flake check` fails while the two version files differ.
